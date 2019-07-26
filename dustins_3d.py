@@ -24,12 +24,24 @@ parser.add_argument("-e", "--error", type=bool, default=False,
 parser.add_argument("-k", "--kappa", type=float, default=1.7, help="Kappa for continuum source flagging.")
 args = parser.parse_args(sys.argv[1:])
 
-def get_xrt_time_new():
+def get_closest_date(inpath, shot): 
+	pp = np.sort(glob.glob(inpath))
+	date = int(shot[:-4])
+	dates_inpath = np.array([int(x.split("/")[-1]) for x in pp])
+	date_diff = date - dates_inpath
+	out_date_idx = np.where(date_diff>=0)[0][-1]
+	out_date_path = pp[out_date_idx]
+	return out_date_path
+
+
+def get_xrt_time_new(shot, ifu):
 	inpath = "/work/05865/maja_n/stampede2/midratio/*"
-	outpath = get_closest_date(inpath)
+	outpath = get_closest_date(inpath, shot)
 	pattern = outpath+"/{}.dat"
 	xrt = {}
+	SIGMA = 4.
 	#weirdampslist = [[('035','LL'),590, 615],[('082','RL'),654,681],[('023','RL'), 349, 376],[('026','LL'), 95,142]]
+	multinames = [x.split('/')[-1][:-4] for x in np.unique(glob.glob(pattern.format('multi_???_'+ifu+'_???_??')))]
 	#for amp in weirdampslist:
 	#		key, start, stop = amp
 	#		xrt_0[key] = np.concatenate([xrt_0[key][:start],np.interp(np.arange(stop-start),[0,stop-start],[xrt_0[key][start],xrt_0[key][stop]]),xrt_0[key][stop:]])
@@ -40,6 +52,7 @@ def get_xrt_time_new():
 	here2 = np.where((wave>line-10)&(wave<line+10))[0]
 	line = 5461
 	here3 = np.where((wave>line-10)&(wave<line+10))[0]
+	SMOOTHATA = True
 	if SMOOTHATA:
 			for multi in multinames:
 					key = (multi[10:13], multi[18:20])
@@ -61,40 +74,6 @@ def get_xrt_time_new():
 			for key in xrt_0.keys():
 					xrt[key] = interp1d(wave, xrt_0[key], fill_value=(xrt_0[key][0],xrt_0[key][-1]),bounds_error=False)
 	return xrt
-
-
-def get_xrt_new():
-		xrt_0, wave = pickle.load(open('/work/05865/maja_n/stampede2/Panacea/xrt-2019.pickle','rb'))
-		xrt = {}
-		weirdampslist = [[('035','LL'),590, 615],[('082','RL'),654,681],[('023','RL'), 349, 376],[('026','LL'), 95,142]]
-		for amp in weirdampslist:
-				key, start, stop = amp
-				xrt_0[key] = np.concatenate([xrt_0[key][:start],np.interp(np.arange(stop-start),[0,stop-start],[xrt_0[key][start],xrt_0[key][stop]]),xrt_0[key][stop:]])
-
-		line = 3910
-		here1 = np.where((wave>line-10)&(wave<line+10))[0]
-		line = 4359
-		here2 = np.where((wave>line-10)&(wave<line+10))[0]
-		line = 5461
-		here3 = np.where((wave>line-10)&(wave<line+10))[0]
-		SMOOTHATA = True
-		SIGMA = 4
-		if SMOOTHATA:
-				for key in xrt_0.keys():
-						here = here1
-						slope = (xrt_0[key][here[-1]+1] - xrt_0[key][here[0]-1])/float(len(here))
-						xrt_1 = np.concatenate([xrt_0[key][:here[0]], xrt_0[key][here[0]-1] + np.arange(len(here))*slope, xrt_0[key][here[-1]+1:]])
-						here = here2
-						slope = (xrt_0[key][here[-1]+1] - xrt_0[key][here[0]-1])/float(len(here))
-						xrt_1 = np.concatenate([xrt_0[key][:here[0]], xrt_0[key][here[0]-1] + np.arange(len(here))*slope, xrt_0[key][here[-1]+1:]])
-						here = here3
-						slope = (xrt_0[key][here[-1]+1] - xrt_0[key][here[0]-1])/float(len(here))
-						xrt_1 = np.concatenate([xrt_0[key][:here[0]], xrt_0[key][here[0]-1] + np.arange(len(here))*slope, xrt_0[key][here[-1]+1:]])
-						xrt[key] = interp1d(wave, gaussian_filter(xrt_1, sigma=SIGMA), fill_value='extrapolate')
-		else:
-				for key in xrt_0.keys():
-						xrt[key] = interp1d(wave, xrt_0[key], fill_value='extrapolate')
-		return xrt
 
 def load_shots(shotlist, ifu):
 	tables = {}	
@@ -325,7 +304,7 @@ shotlist_C = """20181118v020
 
 #shotlist = shotlist_C
 def_wave = np.arange(3470., 5542., 2.)
-xrt = get_xrt_time_new() #get_xrt_new()
+#xrt = get_xrt_time_new() #get_xrt_new()
 
 #detects_cosmos = ascii.read("detects_comsos_3.dat") #detects_comsos_2.dat ifuslot, wl, ra, dec
 #detects_cosmos = ascii.read("COSMOSC_halo_cand.cat")  # ifu, wl_com, ra_com, dec_com
@@ -376,11 +355,11 @@ print zs
 redshifts = joined['wl']/1215.67 - 1.
 print redshifts.min(), redshifts.max()
 redshift_bins = [1.9, 2.43, 2.96, 3.5]
+bin_idx = []
 for counter, maxz in enumerate(redshift_bins[1:]):
-	print counter+1, ' : ', len(redshifts[(redshifts>=redshift_bins[counter])&(redshifts<maxz)])
-
-sys.exit()
-
+	here = np.where((redshifts>=redshift_bins[counter])&(redshifts<maxz))[0]
+	bin_idx.append(here)
+print bin_idx
 
 
 distances_here = cosmo.comoving_distance(zs)
@@ -406,6 +385,7 @@ for i in range(len(joined["ifuslot"])):
 			ifu = "0"+ifu
 		#print ifu, wave, ralae, declae
 
+		xrt = get_xrt_time_new(shot[:-3]+"v"+shot[-3:], ifu) #get_xrt_new()
 		tables, midra, middec = load_shots(shotlist, ifu)
 
 		ffss, ras, decs = [], [], []
