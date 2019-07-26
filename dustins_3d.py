@@ -24,6 +24,44 @@ parser.add_argument("-e", "--error", type=bool, default=False,
 parser.add_argument("-k", "--kappa", type=float, default=1.7, help="Kappa for continuum source flagging.")
 args = parser.parse_args(sys.argv[1:])
 
+def get_xrt_time_new():
+	inpath = "/work/05865/maja_n/stampede2/midratio/*"
+	outpath = get_closest_date(inpath)
+	pattern = outpath+"/{}.dat"
+	xrt = {}
+	#weirdampslist = [[('035','LL'),590, 615],[('082','RL'),654,681],[('023','RL'), 349, 376],[('026','LL'), 95,142]]
+	#for amp in weirdampslist:
+	#		key, start, stop = amp
+	#		xrt_0[key] = np.concatenate([xrt_0[key][:start],np.interp(np.arange(stop-start),[0,stop-start],[xrt_0[key][start],xrt_0[key][stop]]),xrt_0[key][stop:]])
+	wave = def_wave
+	line = 3910
+	here1 = np.where((wave>line-10)&(wave<line+10))[0]
+	line = 4359
+	here2 = np.where((wave>line-10)&(wave<line+10))[0]
+	line = 5461
+	here3 = np.where((wave>line-10)&(wave<line+10))[0]
+	if SMOOTHATA:
+			for multi in multinames:
+					key = (multi[10:13], multi[18:20])
+					tmp = ascii.read(pattern.format( multi))
+					wl, xrt_0 = tmp["wl"], tmp["midratio"]
+					here = here1
+					slope = (xrt_0[here[-1]+1] - xrt_0[here[0]-1])/float(len(here))
+					xrt_1 = np.concatenate([xrt_0[:here[0]], xrt_0[here[0]-1] + np.arange(len(here))*slope, xrt_0[here[-1]+1:]])
+					here = here2
+					slope = (xrt_0[here[-1]+1] - xrt_0[here[0]-1])/float(len(here))
+					xrt_1 = np.concatenate([xrt_0[:here[0]], xrt_0[here[0]-1] + np.arange(len(here))*slope, xrt_0[here[-1]+1:]])
+					here = here3
+					slope = (xrt_0[here[-1]+1] - xrt_0[here[0]-1])/float(len(here))
+					xrt_1 = np.concatenate([xrt_0[:here[0]], xrt_0[here[0]-1] + np.arange(len(here))*slope, xrt_0[here[-1]+1:]])
+					xrt_1 = np.interp(np.arange(len(xrt_1)), np.arange(len(xrt_1))[np.isfinite(xrt_1)], xrt_1[np.isfinite(xrt_1)])
+					#print xrt_1[~np.isfinite(xrt_1)]
+					xrt[key] = interp1d(wave, gaussian_filter(xrt_1, sigma=SIGMA/2.), fill_value=(xrt_1[0],xrt_1[-1]),bounds_error=False)
+	else:
+			for key in xrt_0.keys():
+					xrt[key] = interp1d(wave, xrt_0[key], fill_value=(xrt_0[key][0],xrt_0[key][-1]),bounds_error=False)
+	return xrt
+
 
 def get_xrt_new():
 		xrt_0, wave = pickle.load(open('/work/05865/maja_n/stampede2/Panacea/xrt-2019.pickle','rb'))
@@ -287,7 +325,7 @@ shotlist_C = """20181118v020
 
 #shotlist = shotlist_C
 def_wave = np.arange(3470., 5542., 2.)
-xrt = get_xrt_new()
+xrt = get_xrt_time_new() #get_xrt_new()
 
 #detects_cosmos = ascii.read("detects_comsos_3.dat") #detects_comsos_2.dat ifuslot, wl, ra, dec
 #detects_cosmos = ascii.read("COSMOSC_halo_cand.cat")  # ifu, wl_com, ra_com, dec_com
