@@ -8,7 +8,8 @@ def biweight_location_weights(data, weights, c=6.0, M=None, axis=None):
 
     data = np.asanyarray(data).astype(np.float64)
     weights = np.asanyarray(weights).astype(np.float64)
-    
+   
+    data[weights==0] = np.nan 
     weights[~np.isfinite(data)] = np.nan
     
     if (data.shape!=weights.shape):
