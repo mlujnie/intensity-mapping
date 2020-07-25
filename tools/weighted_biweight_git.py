@@ -5,6 +5,8 @@ from astropy.stats import biweight_location, biweight_midvariance, median_absolu
 
 
 def biweight_location_weights(data, weights, c=6.0, M=None, axis=None):
+    """ weighted biweight location a la Karl
+        nan-resistant and excludes data with zero weights"""
 
     data = np.asanyarray(data).astype(np.float64)
     weights = np.asanyarray(weights).astype(np.float64)
