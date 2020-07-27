@@ -1,5 +1,5 @@
 """I used this to get the 'integrated PSF function'.
-   We fit a Moffat function (beta=3), which is integrated over the fiber area
+   We fit the 'integrated PSF function'
    to the star fluxes, divide these by the best-fit amplitude, and
    compute a biweight in small bins of r/FWHM."""
 
@@ -124,7 +124,7 @@ for st in tabs:
     star_errs.append(star[errkey])
 
 # we need this function for the multiprocessing
-# fits the integrated moffat function to the star radial profiles
+# fits the PSF function to the star radial profiles
 def get_normed_fluxes(i):
     try:
         p0 = [np.nanmax(star_fluxes[i]), 1.7]
