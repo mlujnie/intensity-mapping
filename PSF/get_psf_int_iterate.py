@@ -78,8 +78,16 @@ def fit_psf(dist, amp, fwhm):
 
 # open the current PSF file and interpolate
 psf_shape = ascii.read("PSF_runbiw.dat")
+
+# normalize such that it goes to one at r=0
 psf_gaus_filt = gaussian_filter(psf_shape["runbiw_int_ff_2.1"], 2)
 psf_gaus_filt /= psf_gaus_filt[0]
+
+# normalize so that at r=0.5*FWHM, the PSF = 0.5.
+psf_back_func = interp1d(psf_gaus_filt, psf_shape["r/fwhm"])
+psf_shape["r/fwhm"] = psf_shape["r/fwhm"]/psf_back_func(0.5)*0.5
+
+# now interpolate
 psf_func = interp1d(psf_shape["r/fwhm"], psf_gaus_filt, kind = "cubic")
 
 # find the star flux data
@@ -182,9 +190,10 @@ for rmin, rmax in zip(rbins[:-1], rbins[1:]):
 runbiw, runbiw_err = np.array(runbiw), np.array(runbiw_err)
 
 if SAVE:
-    # save in a file (the same file)
-    print("r/fwhm the same?: ", psf_shape["r/fwhm"] == rbins[:-1])
-    # they are the same
-    psf_shape["runbiw_int_iter_ff_2.1"] = runbiw
-    psf_shape["runbiw_int_iter_ff_err_2.1"] = runbiw_err
-    ascii.write(psf_shape, "PSF_runbiw.dat", overwrite=True)
+    new_psf = {
+        "r/fwhm": rbins[:-1],
+        "psf_int": psf_gaus_filt,
+        "psf_iter": runbiw,
+        "psf_iter_err": runbiw_err
+    }
+    ascii.write(new_psf, "PSF.tab")
