@@ -63,6 +63,7 @@ psf_func = interp1d(psf_shape["r/fwhm"], psf_gaus_filt, kind = "cubic", fill_val
 
 wave_here = (def_wave > 4550)&(def_wave <= 4650)
 for star in stars:
+    detectid = star["detectid"]
     ra, dec = star["ra_1"], star["dec_1"]
     rsqs = distsq(ra, dec, shot_tab["ra"], shot_tab["dec"])
     mask_here = rsqs < 10**2
@@ -77,4 +78,4 @@ for star in stars:
         continue
 
     star_dict = {"r": rs, "flux": these_fibers, "sigma": these_errs}
-    ascii.write(star_dict, f"stars_{shotid}/{detectid}.dat")
+    ascii.write(star_dict, f"/data/05865/maja_n/radial_profiles/stars_{shotid}/{detectid}.dat")
