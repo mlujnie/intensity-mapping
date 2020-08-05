@@ -28,7 +28,7 @@ def fit_psf(dist, amp, fwhm):
 class MyLike(likelihood.Likelihood):
 	def initialize(self):
 
-		self.shotid = 20200124019
+		self.shotid = 20200124020
 
 		stars = glob.glob("/data/05865/maja_n/radial_profiles/stars_{}/*".format(self.shotid))
 		stars = np.sort(stars)
@@ -44,6 +44,8 @@ class MyLike(likelihood.Likelihood):
 			order = np.argsort(rs)[:50]
 			rs = rs[order]
 			a = a[order]
+			if np.nanmax(a["flux"]) < 2.0:
+				continue
 
 			stardists.append(rs)
 			starflux.append(a["flux"].data)

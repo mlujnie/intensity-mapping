@@ -50,7 +50,8 @@ stars = np.sort(stars)
 
 for i, star in enumerate(stars):
 	a = ascii.read(star)
-	amp_str += amp_temp.format(i, 3*np.nanmax(a["flux"]), np.nanmax(a["flux"]))
+	amax = np.nanmax(a["flux"])
+	amp_str += amp_temp.format(i, 3*amax, amax)
 	A_str += f"A_{i}, " 
 	
 total_str = template.format(A_str, amp_str, args.name, args.name)
