@@ -8,7 +8,9 @@ from astropy.io import ascii
 
 from cobaya import likelihood
 
-psf_shape = ascii.read("/data/05865/maja_n/intensity-mapping/PSF/PSF.tab")
+basedir = "/work/05865/maja_n/stampede2/master/"
+
+psf_shape = ascii.read(basedir + "intensity-mapping/PSF/PSF.tab")
 psf_shape["psf_iter"][~np.isfinite(psf_shape["psf_iter"])] = 0
 
 		# normalize such that it goes to one at r=0
@@ -30,8 +32,9 @@ class MyLike(likelihood.Likelihood):
 
 		self.shotid = 20200124020
 
-		stars = glob.glob("/data/05865/maja_n/radial_profiles/stars_{}/*".format(self.shotid))
-		stars = np.sort(stars)
+		with open(basedir+"radial_profiles/stars_{}/use_stars.txt".format(self.shotid), "r") as us:
+			stars = [x[:-1] for x in us.readlines()]
+		us.close()
 
 		starmids = []
 		stardists = []
@@ -44,8 +47,6 @@ class MyLike(likelihood.Likelihood):
 			order = np.argsort(rs)[:20]
 			rs = rs[order]
 			a = a[order]
-			if np.nanmax(a["flux"]) < 2.0:
-				continue
 
 			stardists.append(rs)
 			starflux.append(a["flux"].data)

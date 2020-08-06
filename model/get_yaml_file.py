@@ -10,10 +10,12 @@ parser.add_argument("-s", "--shotid", type=int, default=None,
 parser.add_argument("-n", "--name", type=str, default="try_n", help="name")
 args = parser.parse_args(sys.argv[1:])
 
+basedir = "/work/05865/maja_n/stampede2/master/"
+
 
 template = """likelihood:
     my_likelihood_class.MyLike:
-      python_path: /data/05865/maja_n/intensity-mapping/model/
+      python_path: {}intensity-mapping/model/
       input_params: [{} fwhm]
 
 params:{}
@@ -31,7 +33,7 @@ sampler:
     burn_in: 1
     max_tries: 1000000
 
-output: /data/05865/maja_n/cobaya-chains/{}/{}"""
+output: {}cobaya-chains/{}/{}"""
 
 amp_temp = """
   A_{}:
@@ -45,8 +47,10 @@ amp_temp = """
 amp_str = ""
 A_str = ""
 
-stars = glob.glob("/data/05865/maja_n/radial_profiles/stars_{}/*".format(args.shotid))
+stars = glob.glob(basedir+"radial_profiles/stars_{}/*.dat".format(args.shotid))
 stars = np.sort(stars)
+
+stars_good = open(basedir+"radial_profiles/stars_{}/use_stars.txt".format(args.shotid), "w")
 
 i=0
 for star in stars:
@@ -64,8 +68,9 @@ for star in stars:
 	amp_str += amp_temp.format(i, 3*amax, amax)
 	A_str += f"A_{i}, " 
 	i+=1
+	stars_good.write(star + "\n")
 	
-total_str = template.format(A_str, amp_str, args.name, args.name)
+total_str = template.format(basedir, A_str, amp_str, basedir, args.name, args.name)
 
 with open(args.name + ".yaml", "w") as yf:
 	yf.write(total_str)

@@ -21,6 +21,8 @@ if args.shotid is None:
     sys.exit("Please enter a shotid with\npython3 get_star_data.py -s $SHOTID")
 shotid  = args.shotid
 
+basedir = "/work/05865/maja_n/stampede2/master/"
+
 from hetdex_api.shot import *
 def load_shot(shot):
         fileh = open_shot_file(shot, survey="hdr2.1")
@@ -40,10 +42,10 @@ ffskysub = shot_tab["spec_fullsky_sub"]
 ffskysub[ffskysub==0] = np.nan
 def_wave = np.arange(3470,5542, 2)
 
-karl_stars = ascii.read("/data/05350/ecooper/hdr2.1/calib/KarlsCalStars.tab")
+karl_stars = ascii.read(basedir + "lists/KarlsCalStars.tab")
 stars = karl_stars[karl_stars["shotid"] == shotid]
 
-psf_shape = ascii.read("/data/05865/maja_n/intensity-mapping/PSF/PSF.tab")
+psf_shape = ascii.read(basedir+"intensity-mapping/PSF/PSF.tab")
 #psf_shape = psf_shape[np.isfinite(psf_shape["psf_iter"])]
 psf_shape["psf_iter"][~np.isfinite(psf_shape["psf_iter"])] = 0
 
@@ -78,4 +80,4 @@ for star in stars:
         continue
 
     star_dict = {"r": rs, "flux": these_fibers, "sigma": these_errs}
-    ascii.write(star_dict, f"/data/05865/maja_n/radial_profiles/stars_{shotid}/{detectid}.dat")
+    ascii.write(star_dict, basedir + f"radial_profiles/stars_{shotid}/{detectid}.dat")
