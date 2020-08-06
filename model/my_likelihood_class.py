@@ -41,7 +41,7 @@ class MyLike(likelihood.Likelihood):
 		for sf in stars:
 			a = ascii.read(sf)
 			rs = a["r"]
-			order = np.argsort(rs)[:50]
+			order = np.argsort(rs)[:20]
 			rs = rs[order]
 			a = a[order]
 			if np.nanmax(a["flux"]) < 2.0:

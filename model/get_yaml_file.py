@@ -48,11 +48,22 @@ A_str = ""
 stars = glob.glob("/data/05865/maja_n/radial_profiles/stars_{}/*".format(args.shotid))
 stars = np.sort(stars)
 
-for i, star in enumerate(stars):
+i=0
+for star in stars:
 	a = ascii.read(star)
+	rs = a["r"]
+	order = np.argsort(rs)[:20]
+	rs = rs[order]
+	a = a[order]
+
 	amax = np.nanmax(a["flux"])
+
+	if amax < 2:
+		continue
+	
 	amp_str += amp_temp.format(i, 3*amax, amax)
 	A_str += f"A_{i}, " 
+	i+=1
 	
 total_str = template.format(A_str, amp_str, args.name, args.name)
 
