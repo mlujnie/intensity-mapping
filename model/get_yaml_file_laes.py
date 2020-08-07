@@ -15,10 +15,9 @@ basedir = "/work/05865/maja_n/stampede2/master/"
 chaindir = os.path.join(basedir, "chains-laes","")
 
 template = """likelihood:
-    my_likelihood_lae.MyLike:
+    my_likelihood_laes_hierarchical.HierLike:
       python_path: {}intensity-mapping/model/
       input_params: [mu_A, sigma_A, {}]
-      lae_idx: {}
 
 params:{}
   mu_A:
@@ -66,14 +65,16 @@ for lae_id in dets_laes:
 	lae_idx = lae_id["detectid"]
 	print(lae_idx)
 
-	amax = 20.0
-	amp_str += amp_temp.format(lae_idx, -1*amax, amax, 1.0)
-	A_str += f"A_{lae_idx}, "
+	lae_path = "/work/05865/maja_n/stampede2/master/radial_profiles/laes/lae_{}.dat".format(lae_idx)
+	if os.path.isfile(lae_path):
+		amax = 20.0
+		amp_str += amp_temp.format(lae_idx, -1*amax, amax, 1.0)
+		A_str += f"A_{lae_idx}, "
 
 A_str = A_str[:-2]
-total_str = template.format(basedir, A_str, lae_idx, amp_str, basedir, lae_idx, args.name)
+total_str = template.format(basedir, A_str, amp_str, basedir, args.name, args.name)
 
-path = os.path.join(chaindir, str(lae_idx), "")
+path = os.path.join(chaindir, args.name, "")
 if not os.path.exists(path):
 	os.mkdir(path)
 
