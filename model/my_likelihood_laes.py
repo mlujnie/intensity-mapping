@@ -29,62 +29,85 @@ def distsq(midra, middec, ras, decs):
 class MyLike(likelihood.Likelihood):
 	def initialize(self):
 
-		self.shotid = 20200124020
+		self.shotids = [20200107026,
+				20200124019,
+				20200124020,
+				20200228022,
+				20200228026,
+				20200228027,
+				20200228028,
+				20200228029,
+				20200425010,
+				20200425013,
+				20200430025,
+				20200430026,
+				20200514021,
+				20200626016]
 
 		self.def_wave = np.arange(3470, 5542, 2)
 		
-		dets_laes = ascii.read(basedir+"intensity-mapping/model/dets_laes.tab")
-		dets_laes = dets_laes[dets_laes["vis_class"]>3]
-		dets_laes = dets_laes[dets_laes["shotid"]==self.shotid]
-
-		# load the shot table and prepare full-frame sky subtracted spectra
-		shot_tab = load_shot(self.shotid)
-		ffskysub = shot_tab["spec_fullsky_sub"].copy()
-		ffskysub[ffskysub==0] = np.nan
-
-		# exclude extreme continuum values
-		wlcont = (self.def_wave > 4000)&(self.def_wave <= 4500)
-		medians = np.nanmedian(ffskysub[:,wlcont], axis=1)
-		perc = np.percentile(medians, 95)
-		ffskysub[abs(medians)>perc] *= np.nan
-
-		spec_err = shot_tab["calfibe"].copy()
-		spec_err[~np.isfinite(ffskysub)] = np.nan
+		dets_laes_all = ascii.read(basedir+"lists/dets_laes.tab")
+		dets_laes_all = dets_laes_all[dets_laes_all["vis_class"]>3]
 
 		starmids = []
 		stardists = []
 		starflux = []
 		starerr = []
 		i = 0
-		for lae in dets_laes:
-			lae_ra, lae_dec = lae["ra"], lae["dec"]
-			rs = np.sqrt(distsq(lae_ra, lae_dec, shot_tab["ra"], shot_tab["dec"]))
 
-			lae_wave = lae["wave"]
-			wlhere = abs(self.def_wave - lae_wave) < 3.
+		for shotid in self.shotids:
+			dets_laes = dets_laes_all[dets_laes_all["shotid"]==shotid]
+			if len(dets_laes)==0:
+				continue
 
-			mask = (rs >= 2.5) & (rs <= 10)
-			rs = rs[mask]
-			spec_here = ffskysub[mask]
-			err_here = spec_err[mask]
+			# load the shot table and prepare full-frame sky subtracted spectra
+			try:
+				shot_tab = load_shot(shotid)
+			except Exception as e:
+				print(f"Could not load shot {shotid}. Error message:")
+				print(e)
+				continue
+			ffskysub = shot_tab["spec_fullsky_sub"].copy()
+			ffskysub[ffskysub==0] = np.nan
 
-			order = np.argsort(rs)[:50]
-			rs = rs[order]
-			spec_here = spec_here[order]
-			err_here = err_here[order]
+			# exclude extreme continuum values
+			wlcont = (self.def_wave > 4000)&(self.def_wave <= 4500)
+			medians = np.nanmedian(ffskysub[:,wlcont], axis=1)
+			perc = np.percentile(medians, 95)
+			ffskysub[abs(medians)>perc] *= np.nan
 
-			spec_here = np.nansum(spec_here[:,wlhere], axis=1)			
-			err_sum = np.sqrt(np.nansum(err_here[:,wlhere]**2, axis=1))
+			spec_err = shot_tab["calfibe"].copy()
+			spec_err[~np.isfinite(ffskysub)] = np.nan
+			for lae in dets_laes:
+				lae_ra, lae_dec = lae["ra"], lae["dec"]
+				rs = np.sqrt(distsq(lae_ra, lae_dec, shot_tab["ra"], shot_tab["dec"]))
 
-			mask = (spec_here != 0) & (err_sum != 0)
-			rs = rs[mask]
-			spec_here = spec_here[mask]
+				lae_wave = lae["wave"]
+				wlhere = abs(self.def_wave - lae_wave) < 3.
 
-			stardists.append(rs)
-			starflux.append(spec_here)
-			starerr.append(err_sum)
+				mask = (rs >= 2.5) & (rs <= 10)
+				rs = rs[mask]
+				spec_here = ffskysub[mask]
+				err_here = spec_err[mask]
 
-			i+=1
+				order = np.argsort(rs)
+				rs = rs[order]
+				spec_here = spec_here[order]
+				err_here = err_here[order]
+
+				spec_here = np.nansum(spec_here[:,wlhere], axis=1)			
+				err_sum = np.sqrt(np.nansum(err_here[:,wlhere]**2, axis=1))
+
+				mask = (spec_here != 0) & (err_sum != 0)
+				rs = rs[mask].data[:50]
+				spec_here = spec_here[mask][:50]
+				err_sum = err_sum[mask][:50]
+
+				stardists.append(rs)
+				starflux.append(spec_here)
+				starerr.append(err_sum)
+
+				i+=1
 
 		self.N_stars = i
 		self.starflux, self.stardists = np.array(starflux), np.array(stardists)
