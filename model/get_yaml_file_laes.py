@@ -1,8 +1,9 @@
 import glob
 from astropy.io import ascii
 import numpy as np
-import sys 
+import sys
 import argparse
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--shotid", type=int, default=None,
@@ -11,14 +12,30 @@ parser.add_argument("-n", "--name", type=str, default="try_n", help="name")
 args = parser.parse_args(sys.argv[1:])
 
 basedir = "/work/05865/maja_n/stampede2/master/"
-
+chaindir = os.path.join(basedir, "chains-laes","")
 
 template = """likelihood:
-    my_likelihood_laes.MyLike:
+    my_likelihood_lae.MyLike:
       python_path: {}intensity-mapping/model/
-      input_params: [{}]
+      input_params: [mu_A, sigma_A, {}]
+      lae_idx: {}
 
 params:{}
+  mu_A:
+    prior:
+      min: -10.0
+      max: 10.0
+    ref:
+      min: 1.0
+      max: 2.0
+  sigma_A:
+    prior:
+      dist: expon
+      loc: 0
+      scale: 3.1
+    ref:
+      min: 2.5
+      max: 3.5
 
 sampler:
   mcmc:
@@ -42,23 +59,28 @@ A_str = ""
 
 dets_laes = ascii.read(basedir+"lists/dets_laes.tab")
 dets_laes = dets_laes[dets_laes["vis_class"]>3]
-#dets_laes = dets_laes[dets_laes["shotid"]==args.shotid]
+dets_laes = dets_laes[np.argsort(dets_laes["detectid"])]
 
 i=0
 for lae_id in dets_laes:
-	
-	amax = 4.0
-	amp_str += amp_temp.format(i, -1*amax, amax, 1.0)
-	A_str += f"A_{i}, " 
-	i+=1
-	
-A_str = A_str[:-2]
-total_str = template.format(basedir, A_str, amp_str, basedir, args.name, args.name)
+	lae_idx = lae_id["detectid"]
+	print(lae_idx)
 
-with open(args.name + ".yaml", "w") as yf:
+	amax = 20.0
+	amp_str += amp_temp.format(lae_idx, -1*amax, amax, 1.0)
+	A_str += f"A_{lae_idx}, "
+
+A_str = A_str[:-2]
+total_str = template.format(basedir, A_str, lae_idx, amp_str, basedir, lae_idx, args.name)
+
+path = os.path.join(chaindir, str(lae_idx), "")
+if not os.path.exists(path):
+	os.mkdir(path)
+
+with open(path+args.name + ".yaml", "w") as yf:
 	yf.write(total_str)
 yf.close()
 
-with open("cobaya_job.run", "w") as rf:
+with open(path+"cobaya_job.run", "w") as rf:
 	rf.write("cobaya-run "+args.name+".yaml")
 rf.close()
