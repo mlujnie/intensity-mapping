@@ -46,9 +46,10 @@ class HierLike(likelihood.Likelihood):
 		for lae_id in dets_laes_all["detectid"]:
 			try:
 				tab_lae = ascii.read(self.save_dir+f"lae_{lae_id}.dat")
-				stardists.append(tab_lae["r"].data)
-				starflux.append(tab_lae["flux"].data)
-				starerr.append(tab_lae["sigma"].data)
+				mask = tab_lae["r"] > 2.5
+				stardists.append(tab_lae["r"].data[mask])
+				starflux.append(tab_lae["flux"].data[mask])
+				starerr.append(tab_lae["sigma"].data[mask])
 				lae_ids.append(lae_id)
 
 				i+=1

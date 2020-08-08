@@ -1,8 +1,10 @@
-import my_likelihood_laes_hierarchical as ml
+import my_likelihood_lae as ml
 import numpy as np
+import sys
 
-bello = ml.HierLike()
+bello = ml.MyLike()
 print("Initializing worked.")
+sys.exit()
 
 print(bello.lae_ids)
 print("getting the lae_ids worked")

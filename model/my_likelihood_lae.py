@@ -48,9 +48,10 @@ class MyLike(likelihood.Likelihood):
 		if self.load_saved:
 			try:
 				tab_lae = ascii.read(self.save_dir+f"lae_{self.lae_id}.dat")
-				stardists.append(tab_lae["r"].data)
-				starflux.append(tab_lae["flux"].data)
-				starerr.append(tab_lae["sigma"].data)
+				mask = tab_lae["r"] > 2.5
+				stardists.append(tab_lae["r"].data[mask])
+				starflux.append(tab_lae["flux"].data[mask])
+				starerr.append(tab_lae["sigma"].data[mask])
 
 				i+=1
 				self.N_stars = i
@@ -108,7 +109,7 @@ class MyLike(likelihood.Likelihood):
 		lae_wave = lae["wave"]
 		wlhere = abs(self.def_wave - lae_wave) < 3.
 
-		mask = (rs >= 2.5) & (rs <= 10)
+		mask =  (rs <= 10) # & (rs >= 2.5) 
 		rs = rs[mask]
 		spec_here = ffskysub[mask]
 		err_here = spec_err[mask]
@@ -122,9 +123,9 @@ class MyLike(likelihood.Likelihood):
 		err_sum = np.sqrt(np.nansum(err_here[:,wlhere]**2, axis=1))
 
 		mask = (spec_here != 0) & (err_sum != 0)
-		rs = rs[mask].data[:50]
-		spec_here = spec_here[mask][:50]
-		err_sum = err_sum[mask][:50]
+		rs = rs[mask].data[:100]
+		spec_here = spec_here[mask][:100]
+		err_sum = err_sum[mask][:100]
 
 		stardists.append(rs)
 		starflux.append(spec_here)
@@ -142,7 +143,7 @@ class MyLike(likelihood.Likelihood):
 
 	def save_radial_profile(self):
 		tab = {"r": self.stardists[0], "flux": self.starflux[0], "sigma": self.starsigma[0]}
-		ascii.write(tab, self.save_dir + f"lae_{self.lae_id}.dat")
+		ascii.write(tab, self.save_dir + f"lae_{self.lae_id}.dat", overwrite=True)
 		print(f"Wrote to {self.save_dir}lae_{self.lae_id}.dat")
 
 	def logp(self, **kwargs):
