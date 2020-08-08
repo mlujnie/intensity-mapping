@@ -75,7 +75,8 @@ for star in stars:
     rs = np.sqrt(rsqs[mask_here])
 
     p0 = [np.nanmax(these_fibers), 1.3]
-    popt, pcov = curve_fit(fit_psf, rs, these_fibers, sigma=these_errs, p0=p0)
+    mask_finite = np.isfinite(these_fibers) & np.isfinite(these_errs)
+    popt, pcov = curve_fit(fit_psf, rs[mask_finite], these_fibers[mask_finite], sigma=these_errs[mask_finite], p0=p0)
     if np.sqrt(pcov[1,1]) > 0.1:
         continue
 
