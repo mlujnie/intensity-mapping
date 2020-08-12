@@ -68,3 +68,51 @@ class StarLike(likelihood.Likelihood):
 		logp = np.nansum(- 0.5*(self.starflux - PSF)**2/self.starsigma**2 - 0.5*np.log(2*np.pi*self.starsigma**2))
 		return logp
 
+class LaeLike(likelihood.Likelihood):
+	def initialize(self):
+
+		print("Analyzing shot with ID {}".format(self.shotid))
+		self.def_wave = np.arange(3470, 5542, 2)
+
+		dets_laes_all = ascii.read(basedir+"lists/dets_laes.tab")
+		dets_laes_all = dets_laes_all[dets_laes_all["vis_class"]>3]
+		dets_laes_all = dets_laes_all[dets_laes_all["shotid"]==self.shotid]
+		dets_laes_all = dets_laes_all[np.argsort(dets_laes_all["detectid"])]
+
+		stardists = []
+		starflux = []
+		starerr = []
+		i = 0
+		lae_ids = []
+
+		for lae_id in dets_laes_all["detectid"]:
+			try:
+				tab_lae = ascii.read(self.save_dir+f"lae_{lae_id}.dat")
+				mask = tab_lae["r"] < 5.0
+				stardists.append(tab_lae["r"].data[mask][:25])
+				starflux.append(tab_lae["flux"].data[mask][:25])
+				starerr.append(tab_lae["sigma"].data[mask][:25])
+				lae_ids.append(lae_id)
+
+				i+=1
+			except Exception as e:
+				print(f"An error occurred while loading the LAE file for LAE {lae_id}:")
+				print(e)
+				continue
+
+		self.N_stars = i
+		self.starflux, self.stardists = np.array(starflux), np.array(stardists)
+		self.starsigma = np.array(starerr)
+		self.my_input_params = np.ravel([["A_{}".format(lae_ids[i]), "fwhm"] for i in range(self.N_stars)])
+		self.lae_ids = np.array(lae_ids)
+
+	def logp(self, **kwargs):
+		amp_par = [kwargs["A_{}".format(i)] for i in self.lae_ids] 
+		fwhm_par =  kwargs["fwhm"]
+
+		PSF = np.array([fit_psf(self.stardists[i], amp_par[i], fwhm_par) for i in range(self.N_stars)])
+		
+		logp = np.nansum(- 0.5*(self.starflux - PSF)**2/self.starsigma**2 - 0.5*np.log(2*np.pi*self.starsigma**2))
+		return logp
+
+
