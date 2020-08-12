@@ -27,10 +27,10 @@ psf_func = interp1d(psf_shape["r/fwhm"], psf_gaus_filt, kind = "cubic", fill_val
 def fit_psf(dist, amp, fwhm):
 	return psf_func(dist/fwhm) * amp
 
-class MyLike(likelihood.Likelihood):
+class StarLike(likelihood.Likelihood):
 	def initialize(self):
 
-		self.shotid = 20200124020
+		print("Analyzing shot with ID {}".format(self.shotid))
 
 		with open(basedir+"radial_profiles/stars_{}/use_stars.txt".format(self.shotid), "r") as us:
 			stars = [x[:-1] for x in us.readlines()]

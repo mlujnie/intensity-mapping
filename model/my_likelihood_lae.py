@@ -95,10 +95,15 @@ class MyLike(likelihood.Likelihood):
 		ffskysub[ffskysub==0] = np.nan
 
 		# exclude extreme continuum values
-		wlcont = (self.def_wave > 4000)&(self.def_wave <= 4500)
-		medians = np.nanmedian(ffskysub[:,wlcont], axis=1)
-		perc = np.percentile(medians, 90)
-		ffskysub[abs(medians)>perc] *= np.nan
+		wlcont_lo = (def_wave > 4000)&(def_wave <= 4500)
+		medians_lo = np.nanmedian(ffskysub[:,wlcont_lo], axis=1)
+		perc_lo = np.nanpercentile(medians_lo, perc)
+
+		wlcont_hi = (def_wave > 4800)&(def_wave <= 5300)
+		medians_hi = np.nanmedian(ffskysub[:,wlcont_hi], axis=1)
+		perc_hi = np.nanpercentile(medians_hi, perc)
+		ffskysub[abs(medians_lo)>perc_lo] *= np.nan
+		ffskysub[abs(medians_hi)>perc_hi] *= np.nan
 
 		spec_err = shot_tab["calfibe"].copy()
 		spec_err[~np.isfinite(ffskysub)] = np.nan

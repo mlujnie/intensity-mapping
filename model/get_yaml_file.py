@@ -14,8 +14,9 @@ basedir = "/work/05865/maja_n/stampede2/master/"
 
 
 template = """likelihood:
-    my_likelihood_class.MyLike:
+    my_likelihood_class.StarLike:
       python_path: {}intensity-mapping/model/
+      shotid: {}
       input_params: [{} fwhm]
 
 params:{}
@@ -70,12 +71,12 @@ for star in stars:
 	i+=1
 	stars_good.write(star + "\n")
 	
-total_str = template.format(basedir, A_str, amp_str, basedir, args.name, args.name)
+total_str = template.format(basedir, args.shotid, A_str, amp_str, basedir, args.name, args.name)
 
 with open(args.name + ".yaml", "w") as yf:
 	yf.write(total_str)
 yf.close()
 
 with open("cobaya_job.run", "w") as rf:
-	rf.write("cobaya-run "+args.name+".yaml")
+	rf.write("cobaya-run -f "+args.name+".yaml")
 rf.close()
