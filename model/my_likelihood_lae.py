@@ -95,11 +95,13 @@ class MyLike(likelihood.Likelihood):
 		ffskysub[ffskysub==0] = np.nan
 
 		# exclude extreme continuum values
-		wlcont_lo = (def_wave > 4000)&(def_wave <= 4500)
+		perc = 93
+
+		wlcont_lo = (self.def_wave > 4000)&(self.def_wave <= 4500)
 		medians_lo = np.nanmedian(ffskysub[:,wlcont_lo], axis=1)
 		perc_lo = np.nanpercentile(medians_lo, perc)
 
-		wlcont_hi = (def_wave > 4800)&(def_wave <= 5300)
+		wlcont_hi = (self.def_wave > 4800)&(self.def_wave <= 5300)
 		medians_hi = np.nanmedian(ffskysub[:,wlcont_hi], axis=1)
 		perc_hi = np.nanpercentile(medians_hi, perc)
 		ffskysub[abs(medians_lo)>perc_lo] *= np.nan
