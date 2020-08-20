@@ -89,9 +89,9 @@ class LaeLike(likelihood.Likelihood):
 			try:
 				tab_lae = ascii.read(self.save_dir+f"lae_{lae_id}.dat")
 				mask = tab_lae["r"] < 5.0
-				stardists.append(tab_lae["r"].data[mask][:25])
-				starflux.append(tab_lae["flux"].data[mask][:25])
-				starerr.append(tab_lae["sigma"].data[mask][:25])
+				stardists.append(tab_lae["r"].data[mask][:20])
+				starflux.append(tab_lae["flux"].data[mask][:20])
+				starerr.append(tab_lae["sigma"].data[mask][:20])
 				lae_ids.append(lae_id)
 
 				i+=1
