@@ -1,4 +1,5 @@
 import my_likelihood_plus as ml
+import glob
 import numpy as np
 import sys
 
@@ -9,7 +10,11 @@ print(bello.lae_ids)
 print("getting the lae_ids worked")
 
 print(bello.shot_ids)
+print("number of shots: ", len(np.unique(bello.shot_ids)))
 print("getting the shotid worked")
+
+for shot in np.unique(bello.shot_ids):
+	print(glob.glob(f"/work/05865/maja_n/stampede2/master/chains-laes/psf_{shot}"))
 
 print("flus: ", bello.starflux.dtype)
 print("err: ", bello.starsigma.dtype)

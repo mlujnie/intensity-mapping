@@ -1,7 +1,7 @@
 import numpy as np
 #from scipy import stats
 #from scipy.optimize import curve_fit
-from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage.filters import gaussian_filter, median_filter
 from scipy.interpolate import interp1d
 import glob
 from astropy.io import ascii
@@ -93,7 +93,7 @@ class LaeLikePlus(likelihood.Likelihood):
 	def logp(self, **kwargs):
 		amp_pow = kwargs["A_pow"] #[kwargs["A_{}".format(i)] for i in self.lae_ids] # for the power law
 		amp_psf = [kwargs["Apsf_{}".format(i)] for i in self.lae_ids] # for the PSF
-		fwhm_psf =  [kwargs["fwhm_{}".format(i)] for i in self.shotids] # for the PSF
+		fwhm_psf =  [kwargs["fwhm_{}".format(i)] for i in self.shot_ids] # for the PSF
 		#mu_A, sigma_A = kwargs["mu_A"], kwargs["sigma_A"]
 
 		PSF = np.array([added_profile(dist=self.stardists[i], amp_pow=amp_pow*amp_psf[i], amp_psf=amp_psf[i], 

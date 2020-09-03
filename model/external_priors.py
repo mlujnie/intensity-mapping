@@ -1,12 +1,8 @@
 from astropy.io import ascii
+import numpy as np
 from scipy.interpolate import interp1d
 
-fwhm_tab = ascii.read("fwhm.dat")
-
 basedir = "/work/05865/maja_n/stampede2/master/"
-
-def fwhm_prior(fwhm):
-	return np.log(interp1d(fwhm_tab["fwhm"], fwhm_tab["posterior"], fill_value="extrapolate")(fwhm))
 
 def fwhm_prior(**kwargs):
 	prior = 1.
@@ -15,7 +11,7 @@ def fwhm_prior(**kwargs):
 			continue
 		shotid = key[5:]
 		fwhm = kwargs[key]
-		fwhm_tab = ascii.read(basedir + f"lae_psf_posterior/fwhm_{shotid}.dat")
+		fwhm_tab = ascii.read(basedir + f"fwhm_posteriors/fwhm_{shotid}.dat")
 		prior *= interp1d(fwhm_tab["fwhm"], fwhm_tab["posterior"], fill_value="extrapolate")(fwhm)
 
 	return np.log(prior)
