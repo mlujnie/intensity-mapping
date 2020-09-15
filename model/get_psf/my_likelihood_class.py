@@ -13,7 +13,7 @@ basedir = "/work/05865/maja_n/stampede2/master/"
 psf_shape = ascii.read(basedir + "intensity-mapping/PSF/PSF.tab")
 psf_shape["psf_iter"][~np.isfinite(psf_shape["psf_iter"])] = 0
 
-		# normalize such that it goes to one at r=0
+# normalize such that it goes to one at r=0
 psf_gaus_filt = gaussian_filter(psf_shape["psf_iter"], 2)
 psf_gaus_filt /= psf_gaus_filt[0]
 

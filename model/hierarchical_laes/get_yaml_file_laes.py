@@ -16,7 +16,7 @@ chaindir = os.path.join(basedir, "chains-laes","")
 
 template = """likelihood:
     my_likelihood_laes_hierarchical.HierLike:
-      python_path: {}intensity-mapping/model/
+      python_path: {}intensity-mapping/model/hierarchical_laes/
       input_params: [mu_A, sigma_A, {}]
 
 params:{}

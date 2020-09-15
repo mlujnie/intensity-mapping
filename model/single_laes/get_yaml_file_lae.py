@@ -16,7 +16,7 @@ chaindir = os.path.join(basedir, "chains-laes","")
 
 template = """likelihood:
     my_likelihood_lae.MyLike:
-      python_path: {}intensity-mapping/model/
+      python_path: {}intensity-mapping/model/single_laes/
       input_params: [{}]
       lae_idx: {}
 
