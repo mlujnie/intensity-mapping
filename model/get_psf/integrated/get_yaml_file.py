@@ -23,14 +23,14 @@ params:{}
   fwhm:
     prior:
       min: 1.0
-      max: 4.0
-    ref:
-      min: 1.2
       max: 2.0
+    ref:
+      min: 1.15
+      max: 1.35
 
 sampler:
   mcmc:
-    Rminus1_stop: 0.001
+    Rminus1_stop: 0.03
     burn_in: 100
     max_tries: 1000000
 
