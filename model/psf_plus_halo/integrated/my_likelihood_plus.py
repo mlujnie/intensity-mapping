@@ -42,21 +42,33 @@ r = np.arange(2., 10, rdiff)
 
 conv_func = RectBivariateSpline(fwhms, r[:-1]+rdiff/2., conv_map.T)
 
-def fit_psf_plus_convolved(dist, A_psf, fwhm, A_pow):
-	return fit_psf(dist, A_psf, fwhm) + A_pow * conv_func(fwhm, dist)[0]
-
 def fit_psf(dist, amp, fwhm):
 	return psf_func(dist/fwhm) * amp
 
-def psf_normalized(dist, fwhm):
-	diff = 0.01
-	x = np.arange(-6,6,diff)
-	integral = np.nansum(psf_func(abs(x)/fwhm)*diff)
-	func = psf_func(abs(dist)/fwhm) / integral
-	return func
+def fit_psf_plus_convolved(dist, A_psf, fwhm, A_pow):
+	return fit_psf(dist, amp=A_psf, fwhm=fwhm) + A_pow * conv_func(fwhm, dist)[0]
 
-def powerlaw(dist, amp):
-	return amp * dist**(-2.4)
+def integrate_profile(dist, A_psf, fwhm, A_pow):
+    """integrates the profile over the fiber area"""
+
+    dist_xy = dist/np.sqrt(2)
+    gridrange = np.arange(dist_xy-0.75, dist_xy+0.76, 0.01) # diameter of a fiber is 1.5'' -> radius = 0.75''
+    xgrid = np.array([gridrange for i in range(len(gridrange))])
+    ygrid = xgrid.T
+
+    fiber_r = np.sqrt((xgrid-dist_xy)**2 + (ygrid-dist_xy)**2)
+    disthere = fiber_r <= 0.75
+
+    grid_r = np.sqrt(xgrid**2 + ygrid**2)
+    grid_r[~disthere] = np.nan
+
+    psf_grid = fit_psf_plus_convolved(dist=grid_r, A_psf=A_psf, fwhm=fwhm, A_pow=A_pow)
+    mean_psf = np.nanmean(psf_grid[disthere])
+    return mean_psf
+
+def int_plus_profile(dist, A_psf, fwhm, A_pow):
+    """returns integrate_profile() for an array of distances"""
+    return [integrate_profile(x, A_psf=A_psf, fwhm=fwhm, A_pow=A_pow) for x in dist]
 
 class LaeLikePlus(likelihood.Likelihood):
 	def initialize(self):
@@ -103,7 +115,7 @@ class LaeLikePlus(likelihood.Likelihood):
 		fwhm_psf =  [kwargs["fwhm_{}".format(i)] for i in self.shot_ids] # for the PSF, fixed
 		#mu_A, sigma_A = kwargs["mu_A"], kwargs["sigma_A"]
 
-		PSF = np.array([fit_psf_plus_convolved(dist=self.stardists[i], A_pow=amp_pow[i], A_psf=amp_psf[i], 
+		PSF = np.array([int_plus_profile(dist=self.stardists[i], A_pow=amp_pow[i], A_psf=amp_psf[i], 
 			fwhm=fwhm_psf[i]) for i in range(self.N_stars)])
 		
 		logp = np.nansum(- 0.5*(self.starflux - PSF)**2/self.starsigma**2 - 0.5*np.log(2*np.pi*self.starsigma**2))

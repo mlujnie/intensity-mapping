@@ -16,20 +16,10 @@ chaindir = os.path.join(basedir, "chains-laes","")
 
 template = """likelihood:
     my_likelihood_plus.LaeLikePlus:
-      python_path: {}intensity-mapping/model/
-      input_params: [A_pow, {}]
+      python_path: {}intensity-mapping/model/psf_plus_halo/convolved/
+      input_params: [{}]
 
 params:{}
-  A_pow:
-    prior:
-      min: -10
-      max: 10
-    ref:
-      dist: norm
-      loc: 0
-      scale: 3
-
-prior:{}
 
 sampler:
   mcmc:
@@ -44,17 +34,19 @@ amp_temp = """
 amp_str = ""
 A_str = ""
 
+amp_pow_temp = """
+  Apow_{}:
+    prior:
+      min: -10
+      max: 10
+    ref:
+      min: -1
+      max: 1"""
+
 fwhm_temp = """
   fwhm_{}: {}"""
 fwhm_str = ""
 fwhm_pars = ""
-
-prior_amp_temp = """
-  Apsf_{}_prior: import_module('external_priors').Apsf_{}_prior"""
-prior_fwhm_temp = """
-  fwhm_{}_prior: import_module('external_priors').fwhm_{}_prior"""
-
-prior_str = ""
 
 dets_laes = ascii.read(basedir+"lists/dets_laes.tab")
 dets_laes = dets_laes[dets_laes["vis_class"]>3]
@@ -72,9 +64,8 @@ for lae_id in dets_laes:
 		try:
 			amp_loc = A_bf["A"][A_bf["detectid"]==lae_idx].data[0]
 			amp_str += amp_temp.format(lae_idx, amp_loc)
-			A_str += f"Apsf_{lae_idx}, "
-
-			prior_str += prior_amp_temp.format(lae_idx, lae_idx)
+			amp_str += amp_pow_temp.format(lae_idx)
+			A_str += f"Apsf_{lae_idx}, Apow_{lae_idx}, "
 
 			shots.append(lae_id["shotid"])
 		except Exception as e:
@@ -92,15 +83,13 @@ for shotid in np.unique(shots):
 		fwhm_str += fwhm_temp.format( shotid, fwhm_loc)
 		fwhm_pars += f"fwhm_{shotid}, "
 
-		prior_str += prior_fwhm_temp.format(shotid, shotid)
-
 		print(shotid)
 	except Exception as e:
 		print("An error occurred with shotid "+str(shotid))
 		print(e)
 		pass
 
-total_str = template.format(basedir, fwhm_pars + A_str, amp_str + fwhm_str, prior_str, basedir, args.name, args.name)
+total_str = template.format(basedir, fwhm_pars + A_str, amp_str + fwhm_str, basedir, args.name, args.name)
 
 path = os.path.join(chaindir, "plus_"+args.name, "")
 if not os.path.exists(path):
