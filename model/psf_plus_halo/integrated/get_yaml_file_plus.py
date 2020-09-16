@@ -17,13 +17,14 @@ chaindir = os.path.join(basedir, "chains-laes","")
 template = """likelihood:
     my_likelihood_plus.LaeLikePlus:
       python_path: {}intensity-mapping/model/psf_plus_halo/convolved/
+      save_dir: /work/05865/maja_n/stampede2/master/radial_profiles/laes/
       input_params: [{}]
 
 params:{}
 
 sampler:
   mcmc:
-    Rminus1_stop: 0.001
+    Rminus1_stop: 0.03
     burn_in: 1
     max_tries: 1000000
 

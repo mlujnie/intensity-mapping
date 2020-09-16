@@ -30,8 +30,10 @@ def fit_psf(dist, amp, fwhm):
 def integrate_psf(dist, amp, fwhm):
     """integrates the PSF function over the fiber area"""
 
+    INTSTEP = 0.1
+
     dist_xy = dist/np.sqrt(2)
-    gridrange = np.arange(dist_xy-0.75, dist_xy+0.76, 0.01) # diameter of a fiber is 1.5'' -> radius = 0.75''
+    gridrange = np.arange(dist_xy-0.75, dist_xy+0.75+INTSTEP, INTSTEP) # diameter of a fiber is 1.5'' -> radius = 0.75''
     xgrid = np.array([gridrange for i in range(len(gridrange))])
     ygrid = xgrid.T
 
