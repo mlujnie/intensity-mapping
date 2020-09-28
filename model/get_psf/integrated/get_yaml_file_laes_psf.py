@@ -13,10 +13,12 @@ args = parser.parse_args(sys.argv[1:])
 
 basedir = "/work/05865/maja_n/stampede2/master/"
 chaindir = os.path.join(basedir, "chains-laes","")
+print(chaindir)
 
 template = """likelihood:
     my_likelihood_class.LaeLike:
       python_path: {}intensity-mapping/model/get_psf/integrated/
+      stop_at_error: True
       shotid: {}
       input_params: [fwhm, {}]
 
@@ -24,7 +26,7 @@ params:{}
   fwhm:
     prior:
       min: 1.0
-      max: 3.0
+      max: 2.0
     ref:
       dist: norm
       loc: {}
@@ -35,7 +37,7 @@ prior:
 
 sampler:
   mcmc:
-    Rminus1_stop: 0.001
+    Rminus1_stop: 0.03
     burn_in: 1
     max_tries: 1000000
 
@@ -49,7 +51,7 @@ amp_temp = """
     ref:
       dist: norm
       loc: {}
-      scale: 0.5"""
+      scale: {}"""
 amp_str = ""
 A_str = ""
 
@@ -65,19 +67,21 @@ for lae_id in dets_laes:
 
 	lae_path = "/work/05865/maja_n/stampede2/master/radial_profiles/laes/lae_{}.dat".format(lae_idx)
 	if os.path.isfile(lae_path):
-		amax = 20.0
-		amp_str += amp_temp.format(lae_idx, -1*amax, amax, 1.0)
+		tmp = ascii.read(lae_path)
+		tmp = tmp[tmp['r']<5]
+		amax = np.nanmax(tmp['flux'])
+		amp_str += amp_temp.format(lae_idx, 0, 4*amax, 1.5*amax, 0.4*amax)
 		A_str += f"A_{lae_idx}, "
 
 A_str = A_str[:-2]
 
-fwhm_bf = ascii.read(basedir+"fwhm_posteriors/bf_fwhm.dat") # will have to change this when I have the new FWHMs
+fwhm_bf = ascii.read(basedir+"fwhm_posteriors/integrated/bf_fwhm.dat") # will have to change this when I have the new FWHMs
 fwhm_loc = fwhm_bf["fwhm"][fwhm_bf["shotid"]==args.shotid].data[0]
 fwhm_scale = 0.001
 
 total_str = template.format(basedir, args.shotid, A_str, amp_str, fwhm_loc, fwhm_scale, basedir, args.name, args.name)
 
-path = os.path.join(chaindir, "psf_"+args.name, "")
+path = os.path.join(chaindir, "psf_int_"+args.name, "")
 if not os.path.exists(path):
 	os.mkdir(path)
 
@@ -86,5 +90,5 @@ with open(path+args.name + ".yaml", "w") as yf:
 yf.close()
 
 with open(path+"cobaya_job.run", "w") as rf:
-	rf.write("cobaya-run "+args.name+".yaml")
+	rf.write("cobaya-run -f "+args.name+".yaml")
 rf.close()

@@ -103,11 +103,16 @@ class LaeLikePlus(likelihood.Likelihood):
 		fwhm_psf =  [kwargs["fwhm_{}".format(i)] for i in self.shot_ids] # for the PSF, fixed
 		#mu_A, sigma_A = kwargs["mu_A"], kwargs["sigma_A"]
 
-		PSF = np.array([fit_psf_plus_convolved(dist=self.stardists[i], A_pow=amp_pow[i], A_psf=amp_psf[i], 
-			fwhm=fwhm_psf[i]) for i in range(self.N_stars)])
-		
-		logp = np.nansum(- 0.5*(self.starflux - PSF)**2/self.starsigma**2 - 0.5*np.log(2*np.pi*self.starsigma**2))
+		#PSF = np.array([fit_psf_plus_convolved(dist=self.stardists[i], A_pow=amp_pow[i], A_psf=amp_psf[i], 
+		#	fwhm=fwhm_psf[i]) for i in range(self.N_stars)])
+		#logp = np.nansum(- 0.5*(self.starflux - PSF)**2/self.starsigma**2 - 0.5*np.log(2*np.pi*self.starsigma**2))
 		# logp += np.nansum( - 0.5*(amp_pow - mu_A)**2/sigma_A**2 - 0.5*np.log(2*np.pi*sigma_A**2))
+
+		logp = 0
+		for i in range(self.N_stars):
+			PSF = fit_psf_plus_convolved(dist=self.stardists[i], A_pow=amp_pow[i], A_psf=amp_psf[i], fwhm=fwhm_psf[i])
+			logp += np.nansum(- 0.5*(self.starflux[i] - PSF)**2/self.starsigma[i]**2 - 0.5*np.log(2*np.pi*self.starsigma[i]**2))
+
 		return logp
 
 

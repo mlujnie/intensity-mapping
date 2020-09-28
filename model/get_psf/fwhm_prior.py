@@ -1,4 +1,5 @@
 from astropy.io import ascii
+import numpy as np
 from scipy.interpolate import interp1d
 
 fwhm_tab = ascii.read("fwhm.dat")

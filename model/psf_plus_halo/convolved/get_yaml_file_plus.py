@@ -19,6 +19,7 @@ template = """likelihood:
       python_path: {}intensity-mapping/model/psf_plus_halo/convolved/
       save_dir: /work/05865/maja_n/stampede2/master/radial_profiles/laes/
       input_params: [{}]
+      stop_at_error: True
 
 params:{}
 
@@ -49,7 +50,7 @@ fwhm_temp = """
 fwhm_str = ""
 fwhm_pars = ""
 
-dets_laes = ascii.read(basedir+"lists/dets_laes.tab")
+dets_laes = ascii.read(basedir+"intensity-mapping/tables/new_laes.tab") #"lists/dets_laes.tab")
 dets_laes = dets_laes[dets_laes["vis_class"]>3]
 dets_laes = dets_laes[np.argsort(dets_laes["detectid"])]
 

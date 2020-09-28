@@ -16,6 +16,7 @@ basedir = "/work/05865/maja_n/stampede2/master/"
 template = """likelihood:
     my_likelihood_class.StarLike:
       python_path: {}intensity-mapping/model/get_psf/integrated/
+      stop_at_error: True
       shotid: {}
       input_params: [{} fwhm]
 
@@ -44,7 +45,7 @@ amp_temp = """
     ref:
       dist: norm
       loc: {}
-      scale: 3"""
+      scale: {}"""
 amp_str = ""
 A_str = ""
 
@@ -66,7 +67,7 @@ for star in stars:
 	if amax < 2:
 		continue
 	
-	amp_str += amp_temp.format(i, 3*amax, amax)
+	amp_str += amp_temp.format(i, 3*amax, 1.5*amax, 0.4*amax)
 	A_str += f"A_{i}, " 
 	i+=1
 	stars_good.write(star + "\n")

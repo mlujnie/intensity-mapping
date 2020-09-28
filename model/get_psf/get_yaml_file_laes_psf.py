@@ -17,6 +17,7 @@ chaindir = os.path.join(basedir, "chains-laes","")
 template = """likelihood:
     my_likelihood_class.LaeLike:
       python_path: {}intensity-mapping/model/get_psf/
+      stop_at_error: True
       shotid: {}
       input_params: [fwhm, {}]
 

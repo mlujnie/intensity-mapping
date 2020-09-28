@@ -18,6 +18,7 @@ template = """likelihood:
     my_likelihood_plus.LaeLikePlus:
       python_path: {}intensity-mapping/model/
       input_params: [A_pow, {}]
+      stop_at_error: True
 
 params:{}
   A_pow:

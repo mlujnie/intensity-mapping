@@ -20,10 +20,6 @@ print("flus: ", bello.starflux.dtype)
 print("err: ", bello.starsigma.dtype)
 print("dist: ", bello.stardists.dtype)
 
-#keys = [f"Apsf_{i}" for i in bello.lae_ids]
-#kwargs = {}
-#for key in keys:
-#	kwargs[key] = 0.5
 kwargs = {'Apow_2101631009': 0.2325126233992842,
 'Apow_2101631050': -0.06730443387850125,
 'Apow_2101631071': -0.05220766292889626,
@@ -141,6 +137,14 @@ kwargs = {'Apow_2101631009': 0.2325126233992842,
 'fwhm_20200430025': 1.6177409452947493,
 'fwhm_20200430026': 1.5898157988592412,
 'fwhm_20200626016': 1.5746913331470684}
+
+for shot in bello.shot_ids:
+	kwargs[f'fwhm_{shot}'] = 1.5
+
+for laeid in bello.lae_ids:
+	kwargs[f'Apow_{laeid}'] = 2
+	kwargs[f'Apsf_{laeid}'] = 2
+	
 
 #for shot in bello.shot_ids:
 #	kwargs[f"fwhm_{shot}"] = 1.5

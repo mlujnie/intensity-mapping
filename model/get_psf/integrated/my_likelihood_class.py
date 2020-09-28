@@ -87,9 +87,13 @@ class StarLike(likelihood.Likelihood):
 		amp_par = [kwargs["A_{}".format(i)] for i in range(self.N_stars)] 
 		fwhm_par =  kwargs["fwhm"]
 
-		PSF = np.array([int_psf(self.stardists[i], amp_par[i], fwhm_par) for i in range(self.N_stars)])
-		
-		logp = np.nansum(- 0.5*(self.starflux - PSF)**2/self.starsigma**2 - 0.5*np.log(2*np.pi*self.starsigma**2))
+		#PSF = np.array([int_psf(self.stardists[i], amp_par[i], fwhm_par) for i in range(self.N_stars)])
+		#logp = np.nansum(- 0.5*(self.starflux - PSF)**2/self.starsigma**2 - 0.5*np.log(2*np.pi*self.starsigma**2))
+	
+		logp = 0
+		for i in range(self.N_stars):
+			PSF = int_psf(self.stardists[i], amp_par[i], fwhm_par)
+			logp += np.nansum(- 0.5*(self.starflux[i] - PSF)**2/self.starsigma[i]**2 - 0.5*np.log(2*np.pi*self.starsigma[i]**2))
 		return logp
 
 class LaeLike(likelihood.Likelihood):
@@ -108,21 +112,31 @@ class LaeLike(likelihood.Likelihood):
 		starerr = []
 		i = 0
 		lae_ids = []
-
+		
+		#min_len = 20
 		for lae_id in dets_laes_all["detectid"]:
 			try:
 				tab_lae = ascii.read(self.save_dir+f"lae_{lae_id}.dat")
+				order = np.argsort(tab_lae['r'].data)
+				tab_lae = tab_lae[order]
 				mask = tab_lae["r"] < 5.0
 				stardists.append(tab_lae["r"].data[mask][:20])
 				starflux.append(tab_lae["flux"].data[mask][:20])
 				starerr.append(tab_lae["sigma"].data[mask][:20])
 				lae_ids.append(lae_id)
 
+		#		min_len = np.nanmin([min_len, len(tab_lae["flux"].data[mask][:20])])
+
 				i+=1
 			except Exception as e:
 				print(f"An error occurred while loading the LAE file for LAE {lae_id}:")
 				print(e)
 				continue
+	
+		#for j in range(len(stardists)):
+		#	stardists[j] = stardists[j][:min_len]
+		#	starflux[j] = starflux[j][:min_len]
+		#	starerr[j] = starerr[j][:min_len]
 
 		self.N_stars = i
 		self.starflux, self.stardists = np.array(starflux), np.array(stardists)
@@ -134,9 +148,13 @@ class LaeLike(likelihood.Likelihood):
 		amp_par = [kwargs["A_{}".format(i)] for i in self.lae_ids] 
 		fwhm_par =  kwargs["fwhm"]
 
-		PSF = np.array([int_psf(self.stardists[i], amp_par[i], fwhm_par) for i in range(self.N_stars)])
-		
-		logp = np.nansum(- 0.5*(self.starflux - PSF)**2/self.starsigma**2 - 0.5*np.log(2*np.pi*self.starsigma**2))
+		#PSF = np.array([int_psf(self.stardists[i], amp_par[i], fwhm_par) for i in range(self.N_stars)])
+		#logp = np.nansum(- 0.5*(self.starflux - PSF)**2/self.starsigma**2 - 0.5*np.log(2*np.pi*self.starsigma**2))
+
+		logp = 0
+		for i in range(self.N_stars):
+			PSF = int_psf(self.stardists[i], amp_par[i], fwhm_par)
+			logp += np.nansum(- 0.5*(self.starflux[i] - PSF)**2/self.starsigma[i]**2 - 0.5*np.log(2*np.pi*self.starsigma[i]**2))
 		return logp
 
 

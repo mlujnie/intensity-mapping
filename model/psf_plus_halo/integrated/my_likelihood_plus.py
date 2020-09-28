@@ -2,7 +2,7 @@ import numpy as np
 #from scipy import stats
 #from scipy.optimize import curve_fit
 from scipy.ndimage.filters import gaussian_filter, median_filter
-from scipy.interpolate import interp1d, RectBivariateSpline
+from scipy.interpolate import interp1d, interp2d, RectBivariateSpline
 import glob
 from astropy.io import ascii
 import os
@@ -40,13 +40,13 @@ conv_map = cfl[1:]
 rdiff = 0.02
 r = np.arange(2., 10, rdiff)
 
-conv_func = RectBivariateSpline(fwhms, r[:-1]+rdiff/2., conv_map.T)
+conv_func = interp2d(fwhms, r[:-1]+rdiff/2., conv_map, kind='cubic')
 
 def fit_psf(dist, amp, fwhm):
 	return psf_func(dist/fwhm) * amp
 
 def fit_psf_plus_convolved(dist, A_psf, fwhm, A_pow):
-	return fit_psf(dist, amp=A_psf, fwhm=fwhm) + A_pow * conv_func(fwhm, dist)[0]
+	return fit_psf(dist, amp=A_psf, fwhm=fwhm) + A_pow * conv_func(x=fwhm, y=dist)[:,0]
 
 def integrate_profile(dist, A_psf, fwhm, A_pow):
     """integrates the profile over the fiber area"""
@@ -64,8 +64,10 @@ def integrate_profile(dist, A_psf, fwhm, A_pow):
     grid_r = np.sqrt(xgrid**2 + ygrid**2)
     grid_r[~disthere] = np.nan
 
+    grid_r = grid_r[np.isfinite(grid_r)]
+
     psf_grid = fit_psf_plus_convolved(dist=grid_r, A_psf=A_psf, fwhm=fwhm, A_pow=A_pow)
-    mean_psf = np.nanmean(psf_grid[disthere])
+    mean_psf = np.nanmean(psf_grid)#[disthere])
     return mean_psf
 
 def int_plus_profile(dist, A_psf, fwhm, A_pow):
@@ -116,12 +118,15 @@ class LaeLikePlus(likelihood.Likelihood):
 		amp_psf = [kwargs["Apsf_{}".format(i)] for i in self.lae_ids] # for the PSF, fixed
 		fwhm_psf =  [kwargs["fwhm_{}".format(i)] for i in self.shot_ids] # for the PSF, fixed
 		#mu_A, sigma_A = kwargs["mu_A"], kwargs["sigma_A"]
-
-		PSF = np.array([int_plus_profile(dist=self.stardists[i], A_pow=amp_pow[i], A_psf=amp_psf[i], 
-			fwhm=fwhm_psf[i]) for i in range(self.N_stars)])
-		
-		logp = np.nansum(- 0.5*(self.starflux - PSF)**2/self.starsigma**2 - 0.5*np.log(2*np.pi*self.starsigma**2))
+		#PSF = np.array([int_plus_profile(dist=self.stardists[i], A_pow=amp_pow[i], A_psf=amp_psf[i], 
+		#	fwhm=fwhm_psf[i]) for i in range(self.N_stars)])
+		#logp = np.nansum(- 0.5*(self.starflux - PSF)**2/self.starsigma**2 - 0.5*np.log(2*np.pi*self.starsigma**2))
 		# logp += np.nansum( - 0.5*(amp_pow - mu_A)**2/sigma_A**2 - 0.5*np.log(2*np.pi*sigma_A**2))
+
+		logp = 0
+		for i in range(self.N_stars):
+			PSF = int_plus_profile(dist=self.stardists[i], A_pow=amp_pow[i], A_psf=amp_psf[i], fwhm=fwhm_psf[i])
+			logp += np.nansum(- 0.5*(self.starflux[i] - PSF)**2/self.starsigma[i]**2 - 0.5*np.log(2*np.pi*self.starsigma[i]**2))
 		return logp
 
 

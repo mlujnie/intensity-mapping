@@ -19,6 +19,7 @@ template = """likelihood:
       python_path: {}intensity-mapping/model/psf_plus_halo/convolved/
       save_dir: /work/05865/maja_n/stampede2/master/radial_profiles/laes/
       input_params: [{}]
+      stop_at_error: True
 
 params:{}
 

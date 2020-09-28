@@ -16,6 +16,7 @@ basedir = "/work/05865/maja_n/stampede2/master/"
 template = """likelihood:
     my_likelihood_class.StarLike:
       python_path: {}intensity-mapping/model/get_psf/
+      stop_at_error: True
       shotid: {}
       input_params: [{} fwhm]
 
