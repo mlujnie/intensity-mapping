@@ -70,14 +70,14 @@ for lae_id in dets_laes:
 		tmp = ascii.read(lae_path)
 		tmp = tmp[tmp['r']<5]
 		amax = np.nanmax(tmp['flux'])
-		amp_str += amp_temp.format(lae_idx, 0, 4*amax, 1.5*amax, 0.4*amax)
+		amp_str += amp_temp.format(lae_idx, 0, max(20, 30*amax), 2*amax, 2*amax)
 		A_str += f"A_{lae_idx}, "
 
 A_str = A_str[:-2]
 
 fwhm_bf = ascii.read(basedir+"fwhm_posteriors/integrated/bf_fwhm.dat") # will have to change this when I have the new FWHMs
 fwhm_loc = fwhm_bf["fwhm"][fwhm_bf["shotid"]==args.shotid].data[0]
-fwhm_scale = 0.001
+fwhm_scale = 0.01
 
 total_str = template.format(basedir, args.shotid, A_str, amp_str, fwhm_loc, fwhm_scale, basedir, args.name, args.name)
 

@@ -63,6 +63,8 @@ psf_shape["r/fwhm"] = psf_shape["r/fwhm"]/psf_back_func(0.5)*0.5
 # now interpolate
 psf_func = interp1d(psf_shape["r/fwhm"], psf_gaus_filt, kind = "cubic", fill_value="extrapolate")
 
+ones = np.ones(ffskysub.shape)
+ones[~np.isfinite(ffskysub)] = np.nan
 wave_here = (def_wave > 4550)&(def_wave <= 4650)
 for star in stars:
     detectid = star["detectid"]
@@ -70,8 +72,10 @@ for star in stars:
     rsqs = distsq(ra, dec, shot_tab["ra"], shot_tab["dec"])
     mask_here = rsqs < 10**2
 
+    N = np.nansum(ones[mask_here][:,wave_here], axis=1)
+
     these_fibers = biweight_location(ffskysub[mask_here][:,wave_here], ignore_nan=True, axis=1)
-    these_errs = np.sqrt(biweight_midvariance(ffskysub[mask_here][:,wave_here], ignore_nan=True, axis=1))
+    these_errs = np.sqrt(biweight_midvariance(ffskysub[mask_here][:,wave_here], ignore_nan=True, axis=1))/np.sqrt(N-1)
     rs = np.sqrt(rsqs[mask_here])
 
     p0 = [np.nanmax(these_fibers), 1.3]
