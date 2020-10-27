@@ -2,6 +2,7 @@ import glob
 from astropy.io import ascii
 import numpy as np
 import sys 
+import os
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -26,8 +27,8 @@ params:{}
       min: 1.0
       max: 2.0
     ref:
-      min: 1.15
-      max: 1.35
+      min: {}
+      max: {}
 
 sampler:
   mcmc:
@@ -48,6 +49,19 @@ amp_temp = """
       scale: {}"""
 amp_str = ""
 A_str = ""
+
+# try to get the reported FWHM
+cal_shot_tab = ascii.read(os.path.join(basedir, 'calshots_survey_table.tab'))
+if args.shotid in cal_shot_tab['shotid']:
+	shot_here = cal_shot_tab['shotid']==args.shotid
+	fwhm_reported = cal_shot_tab['fwhm_virus'][shot_here].data[0]
+	err_fwhm_reported = cal_shot_tab['fwhm_virus_err'][shot_here].data[0]
+	fwhm_min = fwhm_reported - err_fwhm_reported
+	fwhm_max = fwhm_reported + err_fwhm_reported
+else:
+	print(f'Shotid {args.shotid} is not in calibration shot list.')
+	fwhm_min = 1.15
+	fwhm_max = 1.35
 
 stars = glob.glob(basedir+"radial_profiles/stars_{}/*.dat".format(args.shotid))
 stars = np.sort(stars)
@@ -72,7 +86,7 @@ for star in stars:
 	i+=1
 	stars_good.write(star + "\n")
 	
-total_str = template.format(basedir, args.shotid, A_str, amp_str, basedir, args.name, args.name)
+total_str = template.format(basedir, args.shotid, A_str, amp_str, fwhm_min, fwhm_max, basedir, args.name, args.name)
 
 with open(args.name + ".yaml", "w") as yf:
 	yf.write(total_str)
