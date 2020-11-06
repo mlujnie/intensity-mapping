@@ -27,6 +27,35 @@ psf_func = interp1d(psf_shape["r/fwhm"], psf_gaus_filt, kind = "cubic", fill_val
 def fit_psf(dist, amp, fwhm):
 	return psf_func(dist/fwhm) * amp
 
+def fit_moffat(dist, amp, fwhm):
+	beta = 3.
+	gamma = fwhm/(2*np.sqrt(2**(1/beta) - 1))
+	return amp * (1+(dist/gamma)**2)**(-1*beta)
+
+def integrate_moffat(dist, amp, fwhm):
+    """integrates the moffat function over the fiber area"""
+
+    INTSTEP = 0.1
+
+    dist_xy = dist/np.sqrt(2)
+    gridrange = np.arange(dist_xy-0.75, dist_xy+0.75+INTSTEP, INTSTEP) # diameter of a fiber is 1.5'' -> radius = 0.75''
+    xgrid = np.array([gridrange for i in range(len(gridrange))])
+    ygrid = xgrid.T
+
+    fiber_r = np.sqrt((xgrid-dist_xy)**2 + (ygrid-dist_xy)**2)
+    disthere = fiber_r <= 0.75
+
+    grid_r = np.sqrt(xgrid**2 + ygrid**2)
+    grid_r[~disthere] = np.nan
+
+    psf_grid = fit_moffat(grid_r, amp, fwhm)
+    mean_psf = np.nanmean(psf_grid[disthere])
+    return mean_psf
+
+def int_moffat(dist, amp, fwhm):
+    """returns integrate_moffat() for an array of distances"""
+    return [integrate_moffat(x, amp, fwhm) for x in dist]
+
 def integrate_psf(dist, amp, fwhm):
     """integrates the PSF function over the fiber area"""
 
@@ -92,7 +121,7 @@ class StarLike(likelihood.Likelihood):
 	
 		logp = 0
 		for i in range(self.N_stars):
-			PSF = int_psf(self.stardists[i], amp_par[i], fwhm_par)
+			PSF = int_moffat(self.stardists[i], amp_par[i], fwhm_par)
 			logp += np.nansum(- 0.5*(self.starflux[i] - PSF)**2/self.starsigma[i]**2 - 0.5*np.log(2*np.pi*self.starsigma[i]**2))
 		return logp
 

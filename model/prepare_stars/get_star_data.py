@@ -6,7 +6,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 import scipy.stats as stats
 import glob
-from astropy.stats import biweight_midvariance, biweight_location
+from astropy.stats import biweight_midvariance, biweight_location, biweight_scale
 from scipy.ndimage.filters import gaussian_filter
 from scipy.interpolate import interp1d
 
@@ -40,6 +40,19 @@ def distsq(midra, middec, ras, decs):
 shot_tab = load_shot(shotid)
 ffskysub = shot_tab["spec_fullsky_sub"]
 ffskysub[ffskysub==0] = np.nan
+
+errors = shot_tab["calfibe"]
+errors[~np.isfinite(ffskysub)] = np.nan
+
+weights = errors**(-2)
+print("weights: ", np.nanmean(weights), np.nanmin(weights), np.nanmax(weights))
+weights_mean = biweight_location(weights, ignore_nan = True)
+weights_std = biweight_scale(weights, ignore_nan = True)
+print(weights_mean, weights_mean + 4*weights_std)
+weights[weights > (weights_mean + 4*weights_std)] = np.nan
+errors[~np.isfinite(ffskysub)] = np.nan
+ffskysub[~np.isfinite(errors)] = np.nan
+
 def_wave = np.arange(3470,5542, 2)
 
 karl_stars = ascii.read(basedir + "lists/KarlsCalStars.tab")
@@ -74,15 +87,26 @@ for star in stars:
 
     N = np.nansum(ones[mask_here][:,wave_here], axis=1)
 
-    these_fibers = biweight_location(ffskysub[mask_here][:,wave_here], ignore_nan=True, axis=1)
-    these_errs = np.sqrt(biweight_midvariance(ffskysub[mask_here][:,wave_here], ignore_nan=True, axis=1))/np.sqrt(N-1)
+    flux_here = ffskysub[mask_here][:,wave_here]
+    weights_here = weights[mask_here][:,wave_here]
+
+    these_fibers_b = biweight_location(flux_here, ignore_nan=True, axis=1)
+    these_errs_b = np.sqrt(biweight_midvariance(flux_here, ignore_nan=True, axis=1))/np.sqrt(N-1)
+    
+
+    weight_sum = np.nansum(weights_here, axis=1)
+    mean_flux_weighted = np.nansum(flux_here * weights_here, axis=1) / weight_sum
+    diff_squared = (flux_here.T - mean_flux_weighted)**2
+    diff_squared = diff_squared.T
+    mean_error_weighted = np.sqrt(np.nansum(diff_squared * weights_here, axis=1)/((N-1)*weight_sum))
+
     rs = np.sqrt(rsqs[mask_here])
 
-    p0 = [np.nanmax(these_fibers), 1.3]
-    mask_finite = np.isfinite(these_fibers) & np.isfinite(these_errs)
-    popt, pcov = curve_fit(fit_psf, rs[mask_finite], these_fibers[mask_finite], sigma=these_errs[mask_finite], p0=p0)
+    p0 = [np.nanmax(mean_flux_weighted), 1.3]
+    mask_finite = np.isfinite(mean_flux_weighted) & np.isfinite(mean_error_weighted)
+    popt, pcov = curve_fit(fit_psf, rs[mask_finite], mean_flux_weighted[mask_finite], sigma=mean_error_weighted[mask_finite], p0=p0)
     if np.sqrt(pcov[1,1]) > 0.1:
         continue
 
-    star_dict = {"r": rs, "flux": these_fibers, "sigma": these_errs}
+    star_dict = {"r": rs, "flux": mean_flux_weighted, "sigma": mean_error_weighted, "flux_biw": these_fibers_b, "err_biw": these_errs_b}
     ascii.write(star_dict, basedir + f"radial_profiles/stars_{shotid}/{detectid}.dat")

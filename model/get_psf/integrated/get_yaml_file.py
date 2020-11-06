@@ -25,7 +25,7 @@ params:{}
   fwhm:
     prior:
       min: 1.0
-      max: 2.0
+      max: 4.0
     ref:
       min: {}
       max: {}
