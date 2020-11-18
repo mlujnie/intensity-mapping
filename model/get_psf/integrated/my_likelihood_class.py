@@ -131,10 +131,12 @@ class LaeLike(likelihood.Likelihood):
 		print("Analyzing shot with ID {}".format(self.shotid))
 		self.def_wave = np.arange(3470, 5542, 2)
 
-		dets_laes_all = ascii.read(basedir+"lists/dets_laes.tab")
-		dets_laes_all = dets_laes_all[dets_laes_all["vis_class"]>3]
+		dets_laes_all = ascii.read(basedir+"good_LAEs_classified.tab")#"lists/dets_laes.tab")
+		#dets_laes_all = dets_laes_all[dets_laes_all["vis_class"]>3]
 		dets_laes_all = dets_laes_all[dets_laes_all["shotid"]==self.shotid]
 		dets_laes_all = dets_laes_all[np.argsort(dets_laes_all["detectid"])]
+
+		print("Number of LAEs: ", len(dets_laes_all))
 
 		stardists = []
 		starflux = []
@@ -182,7 +184,7 @@ class LaeLike(likelihood.Likelihood):
 
 		logp = 0
 		for i in range(self.N_stars):
-			PSF = int_psf(self.stardists[i], amp_par[i], fwhm_par)
+			PSF = int_moffat(self.stardists[i], amp_par[i], fwhm_par)
 			logp += np.nansum(- 0.5*(self.starflux[i] - PSF)**2/self.starsigma[i]**2 - 0.5*np.log(2*np.pi*self.starsigma[i]**2))
 		return logp
 

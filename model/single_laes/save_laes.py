@@ -71,7 +71,7 @@ class SaveLike(likelihood.Likelihood):
 
 	def load_from_shot(self):
 
-		dets_laes_all = ascii.read(basedir+"intensity-mapping/tables/new_laes.tab")
+		dets_laes_all = ascii.read(basedir+"good_LAEs_classified.tab")
 		dets_laes_all = dets_laes_all[dets_laes_all["vis_class"]>3]
 		
 		print("analyzing LAE ID: ", self.lae_id) 

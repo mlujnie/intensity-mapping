@@ -25,15 +25,13 @@ template = """likelihood:
 params:{}
   fwhm:
     prior:
-      min: 1.0
-      max: 2.0
+      dist: norm
+      loc: {}
+      scale: {}
     ref:
       dist: norm
       loc: {}
       scale: {}
-
-prior:
-  fwhm_prior: import_module("fwhm_prior").fwhm_prior
 
 sampler:
   mcmc:
@@ -55,8 +53,14 @@ amp_temp = """
 amp_str = ""
 A_str = ""
 
-dets_laes = ascii.read(basedir+"lists/dets_laes.tab")
-dets_laes = dets_laes[dets_laes["vis_class"]>3]
+shotid = args.shotid
+survey_tab = ascii.read(os.path.join(basedir, "calshots_survey_table.tab"))
+survey_fwhm = survey_tab["fwhm_virus"][survey_tab["shotid"]==shotid].data[0]
+survey_fwhm_err = survey_tab["fwhm_virus_err"][survey_tab["shotid"]==shotid].data[0]
+
+
+dets_laes = ascii.read(basedir+"good_LAEs_classified.tab")#"lists/dets_laes.tab")
+#dets_laes = dets_laes[dets_laes["vis_class"]>3]
 dets_laes = dets_laes[dets_laes["shotid"]==args.shotid]
 dets_laes = dets_laes[np.argsort(dets_laes["detectid"])]
 
@@ -76,10 +80,10 @@ for lae_id in dets_laes:
 A_str = A_str[:-2]
 
 fwhm_bf = ascii.read(basedir+"fwhm_posteriors/integrated/bf_fwhm.dat") # will have to change this when I have the new FWHMs
-fwhm_loc = fwhm_bf["fwhm"][fwhm_bf["shotid"]==args.shotid].data[0]
-fwhm_scale = 0.01
+fwhm_loc = survey_fwhm #fwhm_bf["fwhm"][fwhm_bf["shotid"]==args.shotid].data[0]
+fwhm_scale = survey_fwhm_err
 
-total_str = template.format(basedir, args.shotid, A_str, amp_str, fwhm_loc, fwhm_scale, basedir, args.name, args.name)
+total_str = template.format(basedir, args.shotid, A_str, amp_str, survey_fwhm, survey_fwhm_err, fwhm_loc, fwhm_scale, basedir, args.name, args.name)
 
 path = os.path.join(chaindir, "psf_int_"+args.name, "")
 if not os.path.exists(path):
@@ -90,5 +94,5 @@ with open(path+args.name + ".yaml", "w") as yf:
 yf.close()
 
 with open(path+"cobaya_job.run", "w") as rf:
-	rf.write("cobaya-run -f "+args.name+".yaml")
+	rf.write("ibrun cobaya-run -f "+args.name+".yaml")
 rf.close()

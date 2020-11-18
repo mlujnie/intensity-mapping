@@ -87,5 +87,5 @@ with open(path+args.name + ".yaml", "w") as yf:
 yf.close()
 
 with open(path+"cobaya_job.run", "w") as rf:
-	rf.write("cobaya-run "+args.name+".yaml")
+	rf.write("ibrun cobaya-run "+args.name+".yaml")
 rf.close()

@@ -67,6 +67,6 @@ for lae_id in dets_laes:
 	yf.close()
 
 	with open(path+"cobaya_job.run", "w") as rf:
-		rf.write("cobaya-run "+args.name+".yaml")
+		rf.write("ibrun cobaya-run "+args.name+".yaml")
 	rf.close()
 
