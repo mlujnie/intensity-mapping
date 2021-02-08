@@ -2,6 +2,8 @@
 import time
 from hetdex_tools.get_spec import get_spectra
 
+import random
+
 import astropy.units as u
 from astropy.coordinates import SkyCoord
 from astropy.stats import biweight_scale
@@ -24,7 +26,13 @@ def load_shot(shot):
 def save_lae(detectid):
 	lae = complete_lae_tab[complete_lae_tab["detectid"]==detectid]
 	
-	lae_ra, lae_dec = lae["ra"], lae["dec"]
+	randnum = random.randint(0, len(shot_tab))
+	d_ra = random.uniform(-1, 1)/3600.
+	d_dec = random.uniform(-1, 1)/3600.
+	d_wave = random.uniform(-50, 50)
+
+	lae_ra, lae_dec = shot_tab["ra"][randnum]+d_ra, shot_tab["dec"][randnum]+d_dec
+
 	lae_coords = SkyCoord(ra = lae_ra*u.deg, dec = lae_dec*u.deg)
 	rs = lae_coords.separation(shot_coords)
 	mask = rs <= 10*u.arcsec
@@ -47,7 +55,7 @@ def save_lae(detectid):
 	#continuum = continuum.T
 	#continuum_subtracted = spec_here.copy() - continuum
 	
-	lae_wave = lae["wave"]
+	lae_wave = lae["wave"] + d_wave
 	lae_linewidth = lae["linewidth"]
 	wlhere = abs(def_wave - lae_wave) <= 1.5 * lae_linewidth
 		
@@ -72,7 +80,8 @@ def save_lae(detectid):
 		"sigma": err_sum,
 		"mask_7": mask_7_here,
 		"mask_10": mask_10_here}
-	save_file = os.path.join(basedir, f"radial_profiles/laes/lae_{detectid}.dat")
+		
+	save_file = os.path.join(basedir, f"radial_profiles/bogus_laes/bogus_{detectid}.dat")
 	ascii.write(tab, save_file)
 	print("Wrote to "+save_file)
 	return 1
@@ -89,15 +98,12 @@ b = np.min([np.ones(1036)*1035, a+190], axis=0)
 c = np.nanmin([np.ones(1036)*(1035-190), b-190], axis=0)
 filter_min = np.array(c, dtype=int)
 filter_max = np.array(b, dtype=int)
-t_oldest = os.path.getmtime(basedir+"/radial_profiles/laes/lae_2102566040.dat")
-for shotid in np.unique(complete_lae_tab["shotid"])[:]:
+for shotid in np.unique(complete_lae_tab["shotid"])[::-1]:
 	#load the shot table and prepare full-frame sky subtracted spectra
 	laes_here = complete_lae_tab[complete_lae_tab["shotid"]==shotid]
 	done = True 
 	for detectid in laes_here["detectid"].data:
-		t = os.path.getmtime(os.path.join(basedir, f"radial_profiles/laes/lae_{detectid}.dat"))
-		done *= t >= t_oldest
-	#os.path.exists(os.path.join(basedir, f"radial_profiles/laes/lae_{detectid}.dat"))
+		done *= os.path.exists(os.path.join(basedir, f"radial_profiles/bogus_laes/bogus_{detectid}.dat"))
 	if done:
 		print("Already finished", shotid)
 		continue
@@ -124,6 +130,7 @@ for shotid in np.unique(complete_lae_tab["shotid"])[:]:
 	#ffskysub[abs(medians_hi)>perc_hi] *= np.nan
 	mask_7 = (abs(medians_lo)<perc_lo) & (abs(medians_hi)<perc_hi)
 
+	# exclude extreme continuum values
 	perc = 90
 	
 	wlcont_lo = (def_wave > 4000)&(def_wave <= 4500)
@@ -137,13 +144,13 @@ for shotid in np.unique(complete_lae_tab["shotid"])[:]:
 	#ffskysub[abs(medians_hi)>perc_hi] *= np.nan
 	mask_10 = (abs(medians_lo)<perc_lo) & (abs(medians_hi)<perc_hi)
 
+
 	spec_err = shot_tab["calfibe"].copy()
 	spec_err[~np.isfinite(ffskysub)] = np.nan
 
 	shot_coords = SkyCoord(ra=shot_tab["ra"]*u.deg, dec=shot_tab["dec"]*u.deg)
 	for detectid in laes_here["detectid"].data:
-		t = os.path.getmtime(os.path.join(basedir, f"radial_profiles/laes/lae_{detectid}.dat"))
-		if t>t_oldest: #os.path.exists(os.path.join(basedir, f"radial_profiles/laes/lae_{detectid}.dat")): CHANGE THIS!!!
+		if os.path.exists(os.path.join(basedir, f"radial_profiles/bogus_laes/bogus_{detectid}.dat")):
 			continue
 		tmp = save_lae(detectid)
 	print(f"Finished {shotid}.")	
