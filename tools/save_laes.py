@@ -25,6 +25,7 @@ def load_shot(shot):
  
 def save_lae(detectid):
 	lae = complete_lae_tab[complete_lae_tab["detectid"]==detectid]
+	lae_redshift = lae["wave"]/1215.67 - 1
 	
 	lae_ra, lae_dec = lae["ra"], lae["dec"]
 	lae_coords = SkyCoord(ra = lae_ra*u.deg, dec = lae_dec*u.deg)
@@ -46,6 +47,16 @@ def save_lae(detectid):
 	lae_ra = lae_ra[order]
 	lae_dec = lae_dec[order]
 
+	# save core spectrum and halo spectra
+	rest_wavelength = def_wave / (1 + lae_redshift)
+	core_spectrum = np.nanmedian(spec_here[mask_7_here & (rs <= 2*u.arcsec)], axis=0)
+	spectrum_2_5 = np.nanmedian(spec_here[mask_7_here & (rs > 2*u.arcsec) & (rs <= 5*u.arcsec)], axis=0)
+	spectrum_5_10 = np.nanmedian(spec_here[mask_7_here & (rs > 5*u.arcsec) & (rs <= 10*u.arcsec)], axis=0)
+	ascii.write({"wave_rest": rest_wavelength,
+			"spec_0_2": core_spectrum,
+			"spec_2_5": spectrum_2_5,
+			"spec_5_10": spectrum_5_10}, os.path.join(basedir, f"karls_suggestion/core_spectra/lae_{detectid}.dat"))
+
 	continuum = np.zeros(spec_here.shape)
 	indices = np.arange(1036)
 	for i in indices:
@@ -59,19 +70,40 @@ def save_lae(detectid):
 		lae_wave = lae["wave"]
 		lae_linewidth = lae["linewidth"]
 		wlhere = abs(def_wave - lae_wave) <= 1.5 * lae_linewidth
-			
+		wlhere_4 = abs(def_wave - lae_wave) <= 2 # integration window 4AA
+		wlhere_11 = abs(def_wave - lae_wave) <= 11/2. # integration window 11AA
+		
+		# variable integration window	
 		spec_sum = np.nansum(spec_here[:,wlhere], axis=1)
 		err_sum = np.sqrt(np.nansum(err_here[:,wlhere]**2, axis=1))
 
 		spec_sub_sum = np.nansum(continuum_subtracted[:,wlhere], axis=1)
-		
-		mask = (spec_sum != 0) & (err_sum != 0)
+	
+		# fixed integration window (4AA)			
+		spec_sum_4 = np.nansum(spec_here[:,wlhere_4], axis=1)
+		err_sum_4 = np.sqrt(np.nansum(err_here[:,wlhere_4]**2, axis=1))
+
+		spec_sub_sum_4 = np.nansum(continuum_subtracted[:,wlhere_4], axis=1)
+					
+		# fixed integration window (11AA)
+		spec_sum_11 = np.nansum(spec_here[:,wlhere_11], axis=1)
+		err_sum_11 = np.sqrt(np.nansum(err_here[:,wlhere_11]**2, axis=1))
+
+		spec_sub_sum_11 = np.nansum(continuum_subtracted[:,wlhere_11], axis=1)
+	
+		mask = (spec_sum != 0) & (err_sum != 0) & (spec_sum_4 != 0) & (err_sum_4 != 0) & (spec_sum_11 != 0 ) & (err_sum_11 != 0)
 		rs_0 = rs[mask][:] / u.arcsec
 		rs_0 = rs_0.decompose()
 
 		spec_sum = spec_sum[mask].data[:]
+		spec_sum_4 = spec_sum_4[mask].data[:]
+		spec_sum_11 = spec_sum_11[mask].data[:]
 		err_sum = err_sum[mask].data[:]
+		err_sum_4 = err_sum_4[mask].data[:]
+		err_sum_11 = err_sum_11[mask].data[:]
 		spec_sub_sum = spec_sub_sum[mask].data[:]
+		spec_sub_sum_4 = spec_sub_sum_4[mask].data[:]
+		spec_sub_sum_11 = spec_sub_sum_11[mask].data[:]
 		mask_7_here_0 = mask_7_here[mask]
 		mask_10_here_0 = mask_10_here[mask]
 		lae_ra_0 = lae_ra[mask]
@@ -81,8 +113,14 @@ def save_lae(detectid):
 			"ra": lae_ra_0,
 			"dec": lae_dec_0,
 			"flux":spec_sum,
+			"flux_4":spec_sum_4,
+			"flux_11":spec_sum_11,
 			"flux_contsub":spec_sub_sum,
+			"flux_contsub_4":spec_sub_sum_4,
+			"flux_contsub_11":spec_sub_sum_11,
 			"sigma": err_sum,
+			"sigma_4": err_sum_4,
+			"sigma_11": err_sum_11,
 			"mask_7": mask_7_here_0,
 			"mask_10": mask_10_here_0}
 		save_file = os.path.join(basedir, f"radial_profiles/laes_skymask/lae_{detectid}.dat")
@@ -94,19 +132,40 @@ def save_lae(detectid):
 		lae_wave = lae["wave"] + d_wl*2 # convert pixel to angstrom
 		lae_linewidth = lae["linewidth"]
 		wlhere = abs(def_wave - lae_wave) <= 1.5 * lae_linewidth
-			
+		wlhere_4 = abs(def_wave - lae_wave) <= 2 # integration window 4AA
+		wlhere_11 = abs(def_wave - lae_wave) <= 11/2. # integration window 11AA
+		
+		# variable integration window	
 		spec_sum = np.nansum(spec_here[:,wlhere], axis=1)
 		err_sum = np.sqrt(np.nansum(err_here[:,wlhere]**2, axis=1))
 
 		spec_sub_sum = np.nansum(continuum_subtracted[:,wlhere], axis=1)
-		
-		mask = (spec_sum != 0) & (err_sum != 0)
+	
+		# fixed integration window (4AA)			
+		spec_sum_4 = np.nansum(spec_here[:,wlhere_4], axis=1)
+		err_sum_4 = np.sqrt(np.nansum(err_here[:,wlhere_4]**2, axis=1))
+
+		spec_sub_sum_4 = np.nansum(continuum_subtracted[:,wlhere_4], axis=1)
+					
+		# fixed integration window (11AA)
+		spec_sum_11 = np.nansum(spec_here[:,wlhere_11], axis=1)
+		err_sum_11 = np.sqrt(np.nansum(err_here[:,wlhere_11]**2, axis=1))
+
+		spec_sub_sum_11 = np.nansum(continuum_subtracted[:,wlhere_11], axis=1)
+	
+		mask = (spec_sum != 0) & (err_sum != 0) & (spec_sum_4 != 0) & (err_sum_4 != 0) & (spec_sum_11 != 0 ) & (err_sum_11 != 0)
 		rs_0 = rs[mask][:] / u.arcsec
 		rs_0 = rs_0.decompose()
 
 		spec_sum = spec_sum[mask].data[:]
+		spec_sum_4 = spec_sum_4[mask].data[:]
+		spec_sum_11 = spec_sum_11[mask].data[:]
 		err_sum = err_sum[mask].data[:]
+		err_sum_4 = err_sum_4[mask].data[:]
+		err_sum_11 = err_sum_11[mask].data[:]
 		spec_sub_sum = spec_sub_sum[mask].data[:]
+		spec_sub_sum_4 = spec_sub_sum_4[mask].data[:]
+		spec_sub_sum_11 = spec_sub_sum_11[mask].data[:]
 		mask_7_here_0 = mask_7_here[mask]
 		mask_10_here_0 = mask_10_here[mask]
 		lae_ra_0 = lae_ra[mask]
@@ -116,8 +175,14 @@ def save_lae(detectid):
 			"ra": lae_ra_0,
 			"dec": lae_dec_0,
 			"flux":spec_sum,
+			"flux_4":spec_sum_4,
+			"flux_11":spec_sum_11,
 			"flux_contsub":spec_sub_sum,
+			"flux_contsub_4":spec_sub_sum_4,
+			"flux_contsub_11":spec_sub_sum_11,
 			"sigma": err_sum,
+			"sigma_4": err_sum_4,
+			"sigma_11": err_sum_11,
 			"mask_7": mask_7_here_0,
 			"mask_10": mask_10_here_0}
 		save_file = os.path.join(basedir, f"radial_profiles/laes_wloffset_skymask/lae_{detectid}_{d_wl}.dat")
@@ -145,8 +210,8 @@ for shotid in np.unique(complete_lae_tab["shotid"]):
 	laes_here = complete_lae_tab[complete_lae_tab["shotid"]==shotid]
 	done = True 
 	for detectid in laes_here["detectid"].data:
-		t = os.path.getmtime(os.path.join(basedir, f"radial_profiles/laes/lae_{detectid}.dat"))
-		done *= os.path.exists(os.path.join(basedir, f"radial_profiles/laes_skymask/lae_{detectid}.dat")) #t >= t_oldest # CHANGE THIS!!!
+		#t = os.path.getmtime(os.path.join(basedir, f"radial_profiles/laes/lae_{detectid}.dat"))
+		done *= os.path.exists(os.path.join(basedir, f"karls_suggestion/core_spectra/lae_{detectid}.dat")) #t >= t_oldest # CHANGE THIS!!!
 	#os.path.exists(os.path.join(basedir, f"radial_profiles/laes/lae_{detectid}.dat"))
 	if done:
 		print("Already finished", shotid)
@@ -161,7 +226,8 @@ for shotid in np.unique(complete_lae_tab["shotid"]):
 	ffskysub[ffskysub==0] = np.nan
 
 	# mask sky lines and regions with large residuals
-	for l_min, l_max in [(3720, 3750), (4850,4870), (4950,4970),(5000,5020),(5455,5470),(5075,5095),(4355,4370)]:
+	for l_min, l_max in [(5455,5470), (5075,5095), (4355,4370)]: # only sky lines, not galactic lines.
+		#[(3720, 3750), (4850,4870), (4950,4970),(5000,5020)]: # these are galactic emission lines that don't matter for HETDEX
 		wlhere = (def_wave >= l_min) & (def_wave <= l_max)
 		ffskysub[:,wlhere] = np.nan
 
