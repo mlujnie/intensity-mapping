@@ -139,7 +139,7 @@ c = np.nanmin([np.ones(1036)*(1035-190), b-190], axis=0)
 filter_min = np.array(c, dtype=int)
 filter_max = np.array(b, dtype=int)
 t_oldest = os.path.getmtime(basedir+"/radial_profiles/bogus_laes/bogus_2102565964.dat")
-for shotid in np.unique(complete_lae_tab["shotid"])[::-1]:
+for shotid in np.unique(complete_lae_tab["shotid"]):
 	#load the shot table and prepare full-frame sky subtracted spectra
 	laes_here = complete_lae_tab[complete_lae_tab["shotid"]==shotid]
 	if len(laes_here)<1:
@@ -148,7 +148,7 @@ for shotid in np.unique(complete_lae_tab["shotid"])[::-1]:
 	for detectid in laes_here["detectid"].data:
 		#t = os.path.getmtime(os.path.join(basedir, f"radial_profiles/laes/lae_{detectid}.dat"))
 		#done *= t >= t_oldest
-		done *= os.path.exists(os.path.join(basedir, f"radial_profiles/bogus_laes_skymask/bogus_*_{detectid}.dat"))
+		done *= os.path.exists(os.path.join(basedir, f"radial_profiles/bogus_laes_skymask/bogus_1_{detectid}.dat"))
 
 	if done:
 		print("Already finished", shotid)
